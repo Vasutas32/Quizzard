@@ -1,0 +1,52 @@
+﻿@page "/quizzes"
+@rendermode InteractiveServer
+@inject Quizzard.Services.QuizService QuizService
+@using Microsoft.AspNetCore.Components
+@using Quizzard.Models
+
+<h3>Quiz List</h3>
+
+@if (quizzes == null)
+{
+    <p>Loading quizzes...</p>
+}
+else if (quizzes.Count == 0)
+{
+    <p>No quizzes available.</p>
+}
+else
+{
+    <ul>
+        @foreach (var quiz in quizzes)
+        {
+            <li>
+                @quiz.Title
+                <button @onclick="() => NavigateToQuiz(quiz.Id)">Start Quiz</button>
+            </li>
+        }
+    </ul>
+}
+
+<!-- Navigation Button to Add a New Quiz -->
+<button @onclick="NavigateToCreateQuiz">Create New Quiz</button>
+
+@code {
+    private List<Quiz> quizzes;
+
+    [Inject] private NavigationManager Navigation { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        quizzes = await QuizService.GetQuizzesAsync();
+    }
+
+    private void NavigateToCreateQuiz()
+    {
+        Navigation.NavigateTo("/create-quiz");
+    }
+
+    private void NavigateToQuiz(int quizId)
+    {
+        Navigation.NavigateTo($"/quizzes/{quizId}");
+    }
+}

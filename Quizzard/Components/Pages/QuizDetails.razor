@@ -1,0 +1,74 @@
+﻿@page "/quizzes/{quizId:int}"
+@rendermode InteractiveServer
+@inject Quizzard.Services.QuizService QuizService
+@inject NavigationManager Navigation
+@using Quizzard.Models
+
+<h3>Quiz Details</h3>
+
+@if (quiz != null)
+{
+    <h4>@quiz.Title</h4>
+
+    @foreach (var question in quiz.Questions)
+    {
+        var userAnswer = userAnswers.FirstOrDefault(a => a.QuestionId == question.Id);
+        <div>
+            <p style="margin-bottom: 10px;">@question.Text</p>
+
+            <InputRadioGroup @bind-Value="userAnswer.SelectedAnswerIndex" Name=@($"question-{question.Id}")>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    @for (int i = 0; i < 4; i++)
+                    {
+                        <label style="display: flex; align-items: center;">
+                            <InputRadio Value="@i" /> @question.Options[i]
+                        </label>
+                    }
+                </div>
+            </InputRadioGroup>
+        </div>
+    }
+
+    <button @onclick="SubmitQuiz" disabled="@(isSubmitting)" style="margin-top: 20px;">
+        @(isSubmitting ? "Submitting..." : "Submit Quiz")
+    </button>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    [Parameter] public int quizId { get; set; }
+    private Quiz quiz;
+    private List<UserAnswer> userAnswers = new List<UserAnswer>();
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        quiz = await QuizService.GetQuizByIdAsync(quizId);
+        userAnswers = quiz.Questions.Select(q => new UserAnswer
+            {
+                QuestionId = q.Id,
+                Question = q,
+                SelectedAnswerIndex = -1 // Default to no selection
+            }).ToList();
+    }
+
+    private async Task SubmitQuiz()
+    {
+        isSubmitting = true;
+
+        var quizResult = new UserQuizResult
+            {
+                QuizId = quizId,
+                Answers = userAnswers,
+                CorrectAnswers = userAnswers.Count(a => a.IsCorrect),
+                WrongAnswers = userAnswers.Count(a => !a.IsCorrect)
+            };
+
+        await QuizService.SaveQuizResultAsync(quizResult);
+        isSubmitting = false;
+        Navigation.NavigateTo("/quizzes");
+    }
+}
