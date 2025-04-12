@@ -3,6 +3,7 @@ using Quizzard.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Quizzard.Models.Questions;
 
 namespace Quizzard.Services
 {
@@ -17,7 +18,18 @@ namespace Quizzard.Services
 
         public async Task<List<Quiz>> GetQuizzesAsync()
         {
-            return await _context.Quizzes.Include(q => q.Questions).ToListAsync();
+            return await _context.Quizzes
+                .Include(q => q.Questions)
+                .ThenInclude(q => q.AnswerOptions) // Ensure answer options are loaded
+                .ToListAsync();
+        }
+
+        public async Task<Quiz> GetQuizByIdAsync(int quizId)
+        {
+            return await _context.Quizzes
+                .Include(q => q.Questions)
+                .ThenInclude(q => q.AnswerOptions) // Ensure answer options are loaded
+                .FirstOrDefaultAsync(q => q.Id == quizId);
         }
 
         public async Task AddQuizAsync(Quiz quiz)
@@ -26,23 +38,30 @@ namespace Quizzard.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Quiz> GetQuizByIdAsync(int quizId)
+        public async Task AddAnswerOptionsAsync(List<AnswerOption> options)
         {
-            return await _context.Quizzes
-                 .Include(q => q.Questions)
-                 .FirstOrDefaultAsync(q => q.Id == quizId);
+            _context.AnswerOptions.AddRange(options);
+            await _context.SaveChangesAsync();
         }
+
+
 
         public async Task SaveQuizResultAsync(UserQuizResult quizResult)
         {
-            var quiz = await _context.Quizzes.Include(q => q.Questions)
-                                              .FirstOrDefaultAsync(q => q.Id == quizResult.QuizId);
+            var quiz = await _context.Quizzes
+                .Include(q => q.Questions)
+                .ThenInclude(q => q.AnswerOptions) // Include answer options
+                .FirstOrDefaultAsync(q => q.Id == quizResult.QuizId);
+
             if (quiz == null) throw new Exception("Quiz not found");
 
-            // Ensure all answers are correctly assigned to the questions
             foreach (var answer in quizResult.Answers)
             {
                 var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId);
+                if (question != null)
+                {
+                    var correctOption = question.AnswerOptions[question.CorrectAnswerIndex];
+                }
             }
 
             quizResult.CorrectAnswers = quizResult.Answers.Count(a => a.IsCorrect);
@@ -51,6 +70,7 @@ namespace Quizzard.Services
             _context.UserQuizResults.Add(quizResult);
             await _context.SaveChangesAsync();
         }
+
 
 
         //public async Task<Dictionary<int, int[]>> GetQuestionStatisticsAsync(int quizId)

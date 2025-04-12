@@ -17,11 +17,11 @@
             <p style="margin-bottom: 10px;">@question.Text</p>
 
             <InputRadioGroup @bind-Value="userAnswer.SelectedAnswerIndex" Name=@($"question-{question.Id}")>
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    @for (int i = 0; i < 4; i++)
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                    @for (int i = 0; i < question.AnswerOptions.Count; i++)
                     {
                         <label style="display: flex; align-items: center;">
-                            <InputRadio Value="@i" /> @question.Options[i]
+                            <InputRadio Value="@i" /> @question.AnswerOptions[i].OptionText
                         </label>
                     }
                 </div>

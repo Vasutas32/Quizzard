@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
 @using Quizzard.Models
+@using Quizzard.Models.Questions
 @using Microsoft.AspNetCore.Components
 
 <h3>Create a New Quiz</h3>
@@ -17,17 +18,22 @@
         <input @bind="question.Text" placeholder="Question text" />
         <br />
 
-        
-        <input value="@question.Options[0]" @oninput="(e) => UpdateOption(question, 0, e.Value?.ToString() ?? string.Empty)" placeholder="Option @(1)" />
-        <input value="@question.Options[1]" @oninput="(e) => UpdateOption(question, 1, e.Value?.ToString() ?? string.Empty)" placeholder="Option @(2)" />
-        <input value="@question.Options[2]" @oninput="(e) => UpdateOption(question, 2, e.Value?.ToString() ?? string.Empty)" placeholder="Option @(3)" />
-        <input value="@question.Options[3]" @oninput="(e) => UpdateOption(question, 3, e.Value?.ToString() ?? string.Empty)" placeholder="Option @(4)" />
-        
-
+        @for (int i = 0; i < question.AnswerOptions.Count; i++)
+        {
+            var index = i;
+            <input value="@question.AnswerOptions[index].OptionText"
+                   @oninput="(e) => UpdateOption(question, index, e.Value?.ToString() ?? string.Empty)"
+                   placeholder=@($"Option {index + 1}") />
+        }
         <br />
+
+        <button @onclick="() => AddOption(question)">+</button>
+        <button @onclick="() => RemoveOption(question)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
+        <br />
+
         Correct Answer:
         <select @bind="question.CorrectAnswerIndex">
-            @for (int i = 0; i < 4; i++)
+            @for (int i = 0; i < question.AnswerOptions.Count; i++)
             {
                 <option value="@i">Option @(i + 1)</option>
             }
@@ -54,7 +60,16 @@
 
     private void AddQuestion()
     {
-        questions.Add(new Question { Options = new List<string> { "", "", "", "" } });
+        var newQuestion = new SingleChoiceQuestion
+            {
+                AnswerOptions = new List<AnswerOption>
+            {
+                new AnswerOption { OptionText = "" },
+                new AnswerOption { OptionText = "" }
+            },
+                CorrectAnswerIndex = 0
+            };
+        questions.Add(newQuestion);
         Console.WriteLine("^q^\n");
     }
 
@@ -63,14 +78,29 @@
         questions.Remove(question);
     }
 
+    private void AddOption(Question question)
+    {
+        question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
+    }
+
+    private void RemoveOption(Question question)
+    {
+        if (question.AnswerOptions.Count > 2)
+            question.AnswerOptions.RemoveAt(question.AnswerOptions.Count - 1);
+    }
+
     private async Task SaveQuiz()
     {
         if (!string.IsNullOrWhiteSpace(quizTitle) && questions.Count > 0)
         {
             var newQuiz = new Quiz { Title = quizTitle, Questions = questions };
-            Console.WriteLine("First question:" + questions[0].Options[0] + "\n");
+            Console.WriteLine("First question:" + questions[0].AnswerOptions[0] + "\n");
+            // foreach (var question in newQuiz.Questions)
+            // {
+            //     await QuizService.AddAnswerOptionsAsync(question.AnswerOptions);
+            // }
             await QuizService.AddQuizAsync(newQuiz);
-            Navigation.NavigateTo("/quizzes");
+            Navigation.NavigateTo("/");
         }
     }
 
@@ -82,13 +112,12 @@
     void UpdateOption(Question question, int index, string value)
     {
         // Ensure the list has enough elements
-        while (question.Options.Count < index)
+        while (question.AnswerOptions.Count < index)
         {
-            question.Options.Add(string.Empty);
+            question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
         }
-
         // Now we can safely assign the value
-        question.Options[index] = value;
+        question.AnswerOptions[index].OptionText = value;
     }
 
 

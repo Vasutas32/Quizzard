@@ -1,4 +1,6 @@
-﻿namespace Quizzard.Models
+﻿using Quizzard.Models.Questions;
+
+namespace Quizzard.Models
 {
     public class Quiz
     {
