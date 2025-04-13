@@ -32,7 +32,7 @@
         <br />
 
         Correct Answer:
-        <select @bind="question.CorrectAnswerIndex">
+        <select @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
             @for (int i = 0; i < question.AnswerOptions.Count; i++)
             {
                 <option value="@i">Option @(i + 1)</option>
@@ -67,7 +67,7 @@
                 new AnswerOption { OptionText = "" },
                 new AnswerOption { OptionText = "" }
             },
-                CorrectAnswerIndex = 0
+                CorrectAnswer = ""
             };
         questions.Add(newQuestion);
         Console.WriteLine("^q^\n");

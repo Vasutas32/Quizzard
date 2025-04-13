@@ -14,7 +14,7 @@
             //return userAnswer.SelectedAnswerIndices != null &&
             //       userAnswer.SelectedAnswerIndices.OrderBy(x => x)
             //           .SequenceEqual(CorrectAnswerIndices.OrderBy(x => x));
-            return userAnswer.SelectedAnswerIndex == CorrectAnswerIndex;
+            return userAnswer.SelectedAnswer == CorrectAnswer;
         }
     }
 

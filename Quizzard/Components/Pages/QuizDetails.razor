@@ -16,12 +16,12 @@
         <div>
             <p style="margin-bottom: 10px;">@question.Text</p>
 
-            <InputRadioGroup @bind-Value="userAnswer.SelectedAnswerIndex" Name=@($"question-{question.Id}")>
+            <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
                 <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                     @for (int i = 0; i < question.AnswerOptions.Count; i++)
                     {
                         <label style="display: flex; align-items: center;">
-                            <InputRadio Value="@i" /> @question.AnswerOptions[i].OptionText
+                            <InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
                         </label>
                     }
                 </div>
@@ -51,7 +51,7 @@ else
             {
                 QuestionId = q.Id,
                 Question = q,
-                SelectedAnswerIndex = -1 // Default to no selection
+                SelectedAnswer = "" // Default to no selection
             }).ToList();
     }
 

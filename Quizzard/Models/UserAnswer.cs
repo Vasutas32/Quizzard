@@ -11,8 +11,8 @@ namespace Quizzard.Models
         public int QuestionId { get; set; }
         public Question Question { get; set; }
 
-        public int SelectedAnswerIndex { get; set; }
-        public bool IsCorrect => SelectedAnswerIndex == Question.CorrectAnswerIndex;
+        public string SelectedAnswer { get; set; } = string.Empty;
+        public bool IsCorrect => string.Equals(SelectedAnswer?.Trim(), Question.CorrectAnswer?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
 }

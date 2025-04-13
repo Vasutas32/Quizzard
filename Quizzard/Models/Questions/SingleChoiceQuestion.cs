@@ -10,7 +10,7 @@
         public override bool IsAnswerCorrect(UserAnswer userAnswer)
         {
 
-            return userAnswer.SelectedAnswerIndex == CorrectAnswerIndex;
+            return string.Equals(userAnswer.SelectedAnswer?.Trim(), this.CorrectAnswer?.Trim(), StringComparison.OrdinalIgnoreCase);
         }
     }
 

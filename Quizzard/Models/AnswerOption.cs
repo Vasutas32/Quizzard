@@ -2,7 +2,7 @@
 
 namespace Quizzard.Models
 {
-    public class AnswerOption
+    public class    AnswerOption
     {
         // Primary key for the AnswerOption record.
         public int Id { get; set; }

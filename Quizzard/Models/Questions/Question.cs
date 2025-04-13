@@ -18,7 +18,7 @@
         public int QuizId { get; set; }
         public Quiz Quiz { get; set; }
         public List<AnswerOption> AnswerOptions { get; set; } = new List<AnswerOption>();
-        public int CorrectAnswerIndex { get; set; }
+        public string CorrectAnswer { get; set; } = string.Empty;
 
 
         // This abstract method forces each derived class to implement its own answer checking logic.

@@ -55,14 +55,14 @@ namespace Quizzard.Services
 
             if (quiz == null) throw new Exception("Quiz not found");
 
-            foreach (var answer in quizResult.Answers)
-            {
-                var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId);
-                if (question != null)
-                {
-                    var correctOption = question.AnswerOptions[question.CorrectAnswerIndex];
-                }
-            }
+            //foreach (var answer in quizResult.Answers)
+            //{
+            //    var question = quiz.Questions.FirstOrDefault(q => q.Id == answer.QuestionId);
+            //    if (question != null)
+            //    {
+            //        var correctOption = question.AnswerOptions[question.CorrectAnswer];
+            //    }
+            //}
 
             quizResult.CorrectAnswers = quizResult.Answers.Count(a => a.IsCorrect);
             quizResult.WrongAnswers = quizResult.Answers.Count(a => !a.IsCorrect);
