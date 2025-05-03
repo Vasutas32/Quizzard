@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Quizzard.Data;
@@ -11,9 +12,11 @@ using Quizzard.Data;
 namespace Quizzard.Migrations
 {
     [DbContext(typeof(QuizDbContext))]
-    partial class QuizDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250416043630_UpdateDiscriminatorColumn")]
+    partial class UpdateDiscriminatorColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,20 +171,6 @@ namespace Quizzard.Migrations
                     b.HasBaseType("Quizzard.Models.Questions.Question");
 
                     b.HasDiscriminator().HasValue("SingleChoice");
-                });
-
-            modelBuilder.Entity("Quizzard.Models.Questions.TextInputQuestion", b =>
-                {
-                    b.HasBaseType("Quizzard.Models.Questions.Question");
-
-                    b.HasDiscriminator().HasValue("TextInput");
-                });
-
-            modelBuilder.Entity("Quizzard.Models.Questions.TrueFalseQuestion", b =>
-                {
-                    b.HasBaseType("Quizzard.Models.Questions.Question");
-
-                    b.HasDiscriminator().HasValue("TrueFalse");
                 });
 
             modelBuilder.Entity("Quizzard.Models.AnswerOption", b =>

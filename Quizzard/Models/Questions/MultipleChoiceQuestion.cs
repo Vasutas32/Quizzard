@@ -9,12 +9,23 @@
 
         public override bool IsAnswerCorrect(UserAnswer userAnswer)
         {
-            //// Assume UserAnswer contains a list of selected indices (you may need to adjust UserAnswer accordingly)
-            //// For simplicity, let's say UserAnswer.SelectedAnswerIndices is a List<int>
-            //return userAnswer.SelectedAnswerIndices != null &&
-            //       userAnswer.SelectedAnswerIndices.OrderBy(x => x)
-            //           .SequenceEqual(CorrectAnswerIndices.OrderBy(x => x));
-            return userAnswer.SelectedAnswer == CorrectAnswer;
+            // If either string is empty, treat it as no answer.
+            if (string.IsNullOrWhiteSpace(CorrectAnswer) || string.IsNullOrWhiteSpace(userAnswer.SelectedAnswer))
+                return false;
+
+            var correct = CorrectAnswer
+                .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .OrderBy(x => x)
+                .ToList();
+
+            var selected = userAnswer.SelectedAnswer
+                .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .OrderBy(x => x)
+                .ToList();
+
+            return correct.SequenceEqual(selected);
         }
     }
 

@@ -2,11 +2,9 @@
 {
     public class TextInputQuestion : Question
     {
-        // A string containing correct answers separated by a delimiter (e.g., ";")
-        public string CorrectAnswersRaw { get; set; } = string.Empty;
 
         // Returns a list of acceptable answers
-        public List<string> CorrectAnswers => CorrectAnswersRaw
+        public List<string> CorrectAnswersLocal => this.CorrectAnswer
             .Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .ToList();
 
@@ -17,9 +15,9 @@
 
         public override bool IsAnswerCorrect(UserAnswer userAnswer)
         {
-            //// Compare the user's text input against each acceptable answer, ignoring case
-            //return CorrectAnswers.Any(ans => string.Equals(ans, userAnswer.UserTextAnswer?.Trim(), StringComparison.OrdinalIgnoreCase));
-            return true;
+            //Fix if needed, probalby need to split up selected answers the same way we did for correct answer
+            return CorrectAnswersLocal.Any(ans => string.Equals(ans, userAnswer.SelectedAnswer?.Trim(), StringComparison.OrdinalIgnoreCase));
+
         }
     }
 

@@ -3,35 +3,95 @@
 @inject Quizzard.Services.QuizService QuizService
 @inject NavigationManager Navigation
 @using Quizzard.Models
+@using Quizzard.Models.Questions
 
 <h3>Quiz Details</h3>
 
 @if (quiz != null)
 {
     <h4>@quiz.Title</h4>
-
     @foreach (var question in quiz.Questions)
     {
         var userAnswer = userAnswers.FirstOrDefault(a => a.QuestionId == question.Id);
         <div>
-            <p style="margin-bottom: 10px;">@question.Text</p>
-
-            <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            <p>@question.Text</p>
+            @if (question is MultipleChoiceQuestion)
+            {
+                <!-- Multiple choice: display checkboxes -->
+                @for (int i = 0; i < question.AnswerOptions.Count; i++)
+                {
+                    var index = i;
+                    <label>
+                        <input type="checkbox"
+                        checked="@IsChecked(question.Id, index)"
+                        @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, index, e)" />
+                        @question.AnswerOptions[index].OptionText
+                    </label>
+                    <br />
+                }
+            }
+            else if (question is SingleChoiceQuestion)
+            {
+                <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
                     @for (int i = 0; i < question.AnswerOptions.Count; i++)
                     {
-                        <label style="display: flex; align-items: center;">
+                        <label>
                             <InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
                         </label>
                     }
+                </InputRadioGroup>
+            }
+            else if (question is TrueFalseQuestion)
+            {
+                <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
+                    <!-- For true/false, use the fixed options -->
+                    <InputRadio Value="@(true ? "1" : "0")" /> True
+                    <InputRadio Value="@(false ? "1" : "0")" /> False
+                </InputRadioGroup>
+            }
+            else if (question is TextInputQuestion)
+            {
+                <input type="text" @bind="userAnswer.SelectedAnswer" placeholder="Type your answer..." />
+            }
+            else if (question is PairingQuestion pq)
+            {
+                <div style="display:flex; gap:2rem;">
+                    <!-- Column A -->
+                    <div>
+                        <h5>Column A</h5>
+                        @for (int i = 0; i < pq.ColumnA.Count; i++)
+                        {
+                            var index = i;
+                            var isSelected = selectedA[question.Id] == index;
+                            var isPaired = pairs[question.Id].ContainsKey(index);
+                            <button style="margin:0.2rem;
+                                       background:@(isPaired ? "#ccc" : isSelected ? "#8cf" : "#fff");"
+                                    @onclick="() => OnClickA(question.Id, index)">
+                                @pq.ColumnA[index]
+                            </button>
+                        }
+                    </div>
+                    <!-- Column B -->
+                    <div>
+                        <h5>Column B</h5>
+                        @for (int j = 0; j < pq.ColumnB.Count; j++)
+                        {
+                            var index = j;
+                            var isSelected = selectedB[question.Id] == index;
+                            var isPaired = pairs[question.Id].Values.Contains(index);
+                            <button style="margin:0.2rem;
+                                       background:@(isPaired ? "#ccc" : isSelected ? "#8cf" : "#fff");"
+                                    @onclick="() => OnClickB(question.Id, index)">
+                                @pq.ColumnB[index]
+                            </button>
+                        }
+                    </div>
                 </div>
-            </InputRadioGroup>
+            }
+
         </div>
     }
-
-    <button @onclick="SubmitQuiz" disabled="@(isSubmitting)" style="margin-top: 20px;">
-        @(isSubmitting ? "Submitting..." : "Submit Quiz")
-    </button>
+    <button @onclick="SubmitQuiz">Submit Quiz</button>
 }
 else
 {
@@ -42,23 +102,126 @@ else
     [Parameter] public int quizId { get; set; }
     private Quiz quiz;
     private List<UserAnswer> userAnswers = new List<UserAnswer>();
-    private bool isSubmitting = false;
+
+    private Dictionary<int, int?> selectedA = new();
+    private Dictionary<int, int?> selectedB = new();
+    private Dictionary<int, Dictionary<int, int>> pairs = new();
 
     protected override async Task OnInitializedAsync()
     {
         quiz = await QuizService.GetQuizByIdAsync(quizId);
+
+        // Sort answer options for each question if needed (e.g., by Id)
+        foreach (var question in quiz.Questions)
+        {
+            question.AnswerOptions = question.AnswerOptions.OrderBy(o => o.Id).ToList();
+        }
+
+        foreach (var pq in quiz.Questions.OfType<PairingQuestion>())
+        {
+            var half = pq.AnswerOptions.Count / 2;
+            pq.ColumnA = pq.AnswerOptions
+                           .Take(half)
+                           .Select(o => o.OptionText)
+                           .ToList();
+            pq.ColumnB = pq.AnswerOptions
+                           .Skip(half)
+                           .Take(half)
+                           .Select(o => o.OptionText)
+                           .ToList();
+
+            selectedA[pq.Id] = null;
+            selectedB[pq.Id] = null;
+            pairs[pq.Id] = new Dictionary<int, int>();
+        }
+
         userAnswers = quiz.Questions.Select(q => new UserAnswer
             {
                 QuestionId = q.Id,
                 Question = q,
-                SelectedAnswer = "" // Default to no selection
+                SelectedAnswer = "" // Default: no answer selected
             }).ToList();
+
+        foreach (var q in quiz.Questions.OfType<PairingQuestion>())
+        {
+            selectedA[q.Id] = null;
+            selectedB[q.Id] = null;
+            pairs[q.Id] = new Dictionary<int, int>();
+        }
     }
+
+    void OnClickA(int qid, int ai)
+    {
+        // deselect if same
+        if (selectedA[qid] == ai) { selectedA[qid] = null; return; }
+        selectedA[qid] = ai;
+
+        // if B already has one, pair and clear
+        if (selectedB[qid].HasValue)
+        {
+            pairs[qid][ai] = selectedB[qid].Value;
+            selectedA[qid] = selectedB[qid] = null;
+            UpdateUserAnswer(qid);
+        }
+    }
+
+    void OnClickB(int qid, int bi)
+    {
+        if (selectedB[qid] == bi) { selectedB[qid] = null; return; }
+        selectedB[qid] = bi;
+
+        if (selectedA[qid].HasValue)
+        {
+            pairs[qid][selectedA[qid].Value] = bi;
+            selectedA[qid] = selectedB[qid] = null;
+            UpdateUserAnswer(qid);
+        }
+    }
+
+    void UpdateUserAnswer(int qid)
+    {
+        // flatten dictionary ai→bi into "ai bi; ai bi; ..." form, sorted by ai
+        var dict = pairs[qid];
+        var entries = dict.OrderBy(kv => kv.Key)
+                          .Select(kv => $"{kv.Key}{kv.Value}");
+        userAnswers.First(a => a.QuestionId == qid)
+                   .SelectedAnswer = string.Join(";", entries);
+    }
+
+    private bool IsChecked(int questionId, int optionIndex)
+    {
+        return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(optionIndex);
+    }
+
+    private void OnMultipleChoiceChange(int questionId, int optionIndex, ChangeEventArgs e)
+    {
+        var isChecked = e.Value?.ToString()?.ToLower() == "true";  // Adjust per browser behavior
+
+        var ua = userAnswers.FirstOrDefault(a => a.QuestionId == questionId);
+        if (ua != null)
+        {
+            if (!multipleChoiceSelections.ContainsKey(questionId))
+            {
+                multipleChoiceSelections[questionId] = new List<int>();
+            }
+            var selections = multipleChoiceSelections[questionId];
+            if (isChecked)
+            {
+                if (!selections.Contains(optionIndex))
+                    selections.Add(optionIndex);
+            }
+            else
+            {
+                selections.Remove(optionIndex);
+            }
+            ua.SelectedAnswer = string.Join(";", selections.OrderBy(x => x));
+        }
+    }
+
+    private Dictionary<int, List<int>> multipleChoiceSelections = new Dictionary<int, List<int>>();
 
     private async Task SubmitQuiz()
     {
-        isSubmitting = true;
-
         var quizResult = new UserQuizResult
             {
                 QuizId = quizId,
@@ -68,7 +231,6 @@ else
             };
 
         await QuizService.SaveQuizResultAsync(quizResult);
-        isSubmitting = false;
         Navigation.NavigateTo("/quizzes");
     }
 }

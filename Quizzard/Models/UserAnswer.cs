@@ -12,7 +12,7 @@ namespace Quizzard.Models
         public Question Question { get; set; }
 
         public string SelectedAnswer { get; set; } = string.Empty;
-        public bool IsCorrect => string.Equals(SelectedAnswer?.Trim(), Question.CorrectAnswer?.Trim(), StringComparison.OrdinalIgnoreCase);
+        public bool IsCorrect => Question != null && Question.IsAnswerCorrect(this);
     }
 
 }

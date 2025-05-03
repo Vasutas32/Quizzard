@@ -18,13 +18,25 @@ namespace Quizzard.Data
         {
             modelBuilder.Entity<Question>()
                 .HasDiscriminator<string>("QuestionType")
-                .HasValue<SingleChoiceQuestion>("SingleChoice");
+                .HasValue<SingleChoiceQuestion>("SingleChoice")
+                .HasValue<MultipleChoiceQuestion>("MultipleChoice")
+                .HasValue<TrueFalseQuestion>("TrueFalse")
+                .HasValue<TextInputQuestion>("TextInput")
+                .HasValue<PairingQuestion>("Pairing");
 
+            modelBuilder.Entity<Question>()
+        .Property<string>("QuestionType")
+        .HasMaxLength(50);
+
+            // Configure the AnswerOption relationship if not already done.
             modelBuilder.Entity<AnswerOption>()
                 .HasOne(a => a.Question)
                 .WithMany(q => q.AnswerOptions)
                 .HasForeignKey(a => a.QuestionId);
+
+            base.OnModelCreating(modelBuilder);
         }
+
 
     }
 }

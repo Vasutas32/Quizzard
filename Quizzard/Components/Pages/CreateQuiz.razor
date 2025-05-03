@@ -10,6 +10,17 @@
 <!-- Quiz Title Input -->
 <input @bind="quizTitle" placeholder="Enter quiz title" />
 
+<!-- Question Type Selector -->
+<div>
+    <label>Select Question Type:</label>
+    <select @bind="selectedQuestionType">
+        @foreach (QuestionType type in Enum.GetValues(typeof(QuestionType)))
+        {
+            <option value="@type">@type</option>
+        }
+    </select>
+</div>
+
 <!-- Add Question Section -->
 <h4>Add Questions</h4>
 @foreach (var question in questions)
@@ -18,26 +29,81 @@
         <input @bind="question.Text" placeholder="Question text" />
         <br />
 
-        @for (int i = 0; i < question.AnswerOptions.Count; i++)
+        @if (question is MultipleChoiceQuestion)
         {
-            var index = i;
-            <input value="@question.AnswerOptions[index].OptionText"
-                   @oninput="(e) => UpdateOption(question, index, e.Value?.ToString() ?? string.Empty)"
-                   placeholder=@($"Option {index + 1}") />
-        }
-        <br />
-
-        <button @onclick="() => AddOption(question)">+</button>
-        <button @onclick="() => RemoveOption(question)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
-        <br />
-
-        Correct Answer:
-        <select @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
+            <!-- Render dynamic answer options for Multiple Choice -->
             @for (int i = 0; i < question.AnswerOptions.Count; i++)
             {
-                <option value="@i">Option @(i + 1)</option>
+                var index = i;
+                <!-- capture index locally -->
+                <input value="@question.AnswerOptions[index].OptionText"
+                @oninput="(e) => UpdateOption(question, index, e.Value?.ToString() ?? string.Empty)"
+                placeholder=@($"Option {index + 1}") />
             }
-        </select>
+            <br />
+            <button @onclick="() => AddOption(question)">+</button>
+            <button @onclick="() => RemoveOption(question)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
+            <br />
+            <label>Correct Answers (semicolon separated indices):</label>
+            <!-- For multiple choice, creator enters something like "0;3" -->
+            <input @bind="question.CorrectAnswer" placeholder="e.g., 0;3" />
+        }
+        else if (question is SingleChoiceQuestion)
+        {
+            <!-- Render dynamic answer options for Single Choice -->
+            @for (int i = 0; i < question.AnswerOptions.Count; i++)
+            {
+                var index = i;
+                <input value="@question.AnswerOptions[index].OptionText"
+                @oninput="(e) => UpdateOption(question, index, e.Value?.ToString() ?? string.Empty)"
+                placeholder=@($"Option {index + 1}") />
+            }
+            <br />
+            <button @onclick="() => AddOption(question)">+</button>
+            <button @onclick="() => RemoveOption(question)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
+            <br />
+            <label>Correct Answer:</label>
+            <select @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
+                @for (int i = 0; i < question.AnswerOptions.Count; i++)
+                {
+                    <option value="@i">Option @(i + 1)</option>
+                }
+            </select>
+        }
+        else if (question is TrueFalseQuestion)
+        {
+            <!-- For True/False, the options are fixed; show a message and a dropdown -->
+            <p>This is a True/False question. Options are fixed: True and False.</p>
+            <label>Correct Answer:</label>
+            <select @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
+                <!-- Use "1" for True and "0" for False -->
+                <option value="1">True</option>
+                <option value="0">False</option>
+            </select>
+        }
+        else if (question is TextInputQuestion)
+        {
+            <label>Correct Answers (semicolon separated):</label>
+            <input @bind="question.CorrectAnswer" placeholder="e.g., cat;feline" />
+        }
+        else if (question is PairingQuestion q)
+        {
+            <p>Pairing:</p>
+            @for (int row = 0; row < q.ColumnA.Count; row++)
+            {
+                var index = row;
+                <div style="display:flex; gap:8px; margin-bottom:4px;">
+                    <input @bind="q.ColumnA[index]" placeholder=@($"A{index+1}") />
+                    <input @bind="q.ColumnB[index]" placeholder=@($"B{index+1}") />
+                </div>
+            }
+            <button @onclick="() => AddPairRow(q)">+ Row</button>
+            <button @onclick="() => RemovePairRow(q)" disabled="@(q.ColumnA.Count <= 2)">– Row</button>
+            <br />
+            <label>Correct Pairs:</label>
+            <input @bind="q.CorrectAnswer" placeholder="e.g. 02;13;20;31" />
+        }
+
 
         <button @onclick="() => RemoveQuestion(question)">Remove</button>
         <hr />
@@ -52,6 +118,7 @@
 @code {
     private string quizTitle = "";
     private List<Question> questions = new();
+    private QuestionType selectedQuestionType = QuestionType.SingleChoice;
 
     private void Bello()
     {
@@ -60,18 +127,93 @@
 
     private void AddQuestion()
     {
-        var newQuestion = new SingleChoiceQuestion
-            {
-                AnswerOptions = new List<AnswerOption>
-            {
-                new AnswerOption { OptionText = "" },
-                new AnswerOption { OptionText = "" }
-            },
-                CorrectAnswer = ""
-            };
-        questions.Add(newQuestion);
+        // Create new question based on the selected type
+        if (selectedQuestionType == QuestionType.SingleChoice)
+        {
+            var newQuestion = new SingleChoiceQuestion
+                {
+                    AnswerOptions = new List<AnswerOption>
+                {
+                    new AnswerOption { OptionText = "" },
+                    new AnswerOption { OptionText = "" }
+                },
+                // Default: correct answer is the first option (as a string "0")
+                    CorrectAnswer = "0"
+                };
+            questions.Add(newQuestion);
+        }
+        else if (selectedQuestionType == QuestionType.MultipleChoice)
+        {
+            var newQuestion = new MultipleChoiceQuestion
+                {
+                    AnswerOptions = new List<AnswerOption>
+                {
+                    new AnswerOption { OptionText = "" },
+                    new AnswerOption { OptionText = "" }
+                },
+                // Default: no correct answers initially
+                    CorrectAnswer = ""
+                };
+            questions.Add(newQuestion);
+        }
+        else if (selectedQuestionType == QuestionType.TrueFalse)
+        {
+            var newQuestion = new TrueFalseQuestion
+                {
+                // For True/False, auto-create fixed answer options:
+                    AnswerOptions = new List<AnswerOption>
+                {
+                    new AnswerOption { OptionText = "True" },
+                    new AnswerOption { OptionText = "False" }
+                },
+                // Default correct answer is "1" (True)
+                    CorrectAnswer = "1"
+                };
+            questions.Add(newQuestion);
+        }
+        else if (selectedQuestionType == QuestionType.TextInput)
+        {
+            var newQuestion = new TextInputQuestion
+                {
+                    CorrectAnswer = "", // Can be multiple acceptable answers separated by semicolons
+                };
+            questions.Add(newQuestion);
+        }
+        else if (selectedQuestionType == QuestionType.Pairing)
+        {
+            // start with 2 rows = 4 options
+            questions.Add(new PairingQuestion
+                    {
+                        AnswerOptions = new List<AnswerOption>{
+            new AnswerOption(), new AnswerOption(), // Column A
+            new AnswerOption(), new AnswerOption()  // Column B
+          },
+                        CorrectAnswer = ""
+                    });
+        }
+        // (Additional question types can be added here)
         Console.WriteLine("^q^\n");
     }
+
+    void AddPairRow(PairingQuestion pq)
+    {
+        // add one more A and one more B
+        pq.ColumnA.Add("");
+        pq.ColumnB.Add("");
+        pq.SyncAnswerOptionsFromColumns();
+    }
+
+    void RemovePairRow(PairingQuestion pq)
+    {
+        // remove the last two
+        if (pq.ColumnA.Count > 2)
+        {
+            pq.ColumnA.RemoveAt(pq.ColumnA.Count - 1);
+            pq.ColumnB.RemoveAt(pq.ColumnB.Count - 1);
+        }
+        pq.SyncAnswerOptionsFromColumns();
+    }
+
 
     private void RemoveQuestion(Question question)
     {
@@ -80,25 +222,27 @@
 
     private void AddOption(Question question)
     {
-        question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
+        // Only allow dynamic options for SingleChoice and MultipleChoice
+        if (question is SingleChoiceQuestion || question is MultipleChoiceQuestion)
+            question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
     }
 
     private void RemoveOption(Question question)
     {
-        if (question.AnswerOptions.Count > 2)
+        if ((question is SingleChoiceQuestion || question is MultipleChoiceQuestion) && question.AnswerOptions.Count > 2)
             question.AnswerOptions.RemoveAt(question.AnswerOptions.Count - 1);
     }
 
     private async Task SaveQuiz()
     {
+        foreach (var pq in questions.OfType<PairingQuestion>())
+        {
+            pq.SyncAnswerOptionsFromColumns();
+        }
         if (!string.IsNullOrWhiteSpace(quizTitle) && questions.Count > 0)
         {
             var newQuiz = new Quiz { Title = quizTitle, Questions = questions };
-            Console.WriteLine("First question:" + questions[0].AnswerOptions[0] + "\n");
-            // foreach (var question in newQuiz.Questions)
-            // {
-            //     await QuizService.AddAnswerOptionsAsync(question.AnswerOptions);
-            // }
+            // Console.WriteLine("First question:" + questions[0]?.AnswerOptions[0].OptionText + "\n");
             await QuizService.AddQuizAsync(newQuiz);
             Navigation.NavigateTo("/");
         }
@@ -112,15 +256,13 @@
     void UpdateOption(Question question, int index, string value)
     {
         // Ensure the list has enough elements
-        while (question.AnswerOptions.Count < index)
+        while (question.AnswerOptions.Count <= index)
         {
             question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
         }
         // Now we can safely assign the value
         question.AnswerOptions[index].OptionText = value;
     }
-
-
 
     [Inject] private NavigationManager Navigation { get; set; }
 }
