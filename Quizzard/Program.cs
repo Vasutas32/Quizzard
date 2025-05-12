@@ -13,6 +13,7 @@ builder.Services.AddScoped<QuizService>();
 
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 builder.Services.AddDbContext<QuizDbContext>(options => options.UseNpgsql(connectionString));
+//builder.Services.AddChartJsBlazor();
 
 var app = builder.Build();
 

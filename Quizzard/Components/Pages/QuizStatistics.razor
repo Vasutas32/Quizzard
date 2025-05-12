@@ -1,0 +1,133 @@
+﻿@page "/quiz-stats/{quizId:int}"
+@inject Quizzard.Services.QuizService QuizService
+@using Quizzard.Models
+@using Quizzard.Models.Questions
+
+<h3>Statistics for “@stats?.QuizTitle”</h3>
+
+@if (stats == null || quiz == null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <p>Total Attempts: @stats.TotalAttempts</p>
+    <p>Perfect Scores: @stats.PerfectAttempts</p>
+    <p>Average Score: @stats.AverageScore.ToString("P0")</p>
+
+    @foreach (var qStat in stats.Questions)
+    {
+        <h4>@qStat.QuestionText</h4>
+        <p>Answered @qStat.TotalCount times; @qStat.CorrectCount correct.</p>
+
+        <table class="table table-sm">
+            <thead><tr><th>Option/Response</th><th>Count</th></tr></thead>
+            <tbody>
+                @foreach (var kv in qStat.OptionPickCounts)
+                {
+                    <tr><td>@kv.Key</td><td>@kv.Value</td></tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Show the correct answer(s): -->
+        <p>
+            Correct Answer(s):
+            @string.Join(", ",
+                    GetCorrectAnswerTexts(qStat.QuestionId))
+        </p>
+
+        <!-- PieChart component: -->
+        <PieChart Values="GetValues(qStat)"
+                  Colors="GetColors(qStat)"
+                  Labels="qStat.OptionPickCounts.Keys.ToArray()"
+                  Size="200" />
+        <hr />
+    }
+}
+
+@code {
+    [Parameter] public int quizId { get; set; }
+
+    private QuizStatistic stats;
+    private Quiz quiz;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load both the raw quiz (to know texts & correct keys) and its stats
+        quiz = await QuizService.GetQuizByIdAsync(quizId);
+        stats = await QuizService.GetQuizStatisticsAsync(quizId);
+    }
+
+    /// <summary>
+    /// Pulls out the counts as doubles for the PieChart.
+    /// </summary>
+    private double[] GetValues(QuestionStatistics qStat)
+        => qStat.OptionPickCounts.Values.Select(c => (double)c).ToArray();
+
+    /// <summary>
+    /// Generates one color per slice (just cycling HSL here).
+    /// </summary>
+    private string[] GetColors(QuestionStatistics qStat)
+    {
+        var n = qStat.OptionPickCounts.Count;
+        return Enumerable.Range(0, n)
+            .Select(i => $"hsl({i * 360.0 / n:F0},70%,60%)")
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Finds the correct answer indices from the original quiz question
+    /// and maps them back to the option texts.
+    /// </summary>
+    private string[] GetCorrectAnswerTexts(int questionId)
+    {
+        var question = quiz.Questions
+                           .First(q => q.Id == questionId);
+
+        return question.Type switch
+        {
+            QuestionType.MultipleChoice =>
+                // CorrectAnswer is e.g. "0;2;3"
+                question.CorrectAnswer
+                        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(idx => int.Parse(idx))
+                        .Select(i => question.AnswerOptions[i].OptionText)
+                        .ToArray(),
+
+            QuestionType.SingleChoice =>
+                new[] {
+                  question.AnswerOptions[
+                    int.Parse(question.CorrectAnswer)
+                  ].OptionText
+                    },
+
+            QuestionType.TrueFalse =>
+                question.CorrectAnswer == "1"
+                  ? new[] { "True" }
+                  : new[] { "False" },
+
+            QuestionType.TextInput =>
+                // free-form, show what the creator entered
+                question.CorrectAnswer
+                        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                        .ToArray(),
+
+            QuestionType.Pairing =>
+                // show pairs; e.g. "02;13" -> ["A1↔B2","A2↔B1"]
+                question.CorrectAnswer
+                        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(pair =>
+                        {
+                            var a = pair[0] - '0';
+                            var b = pair[1] - '0';
+                            // rebuild from AnswerOptions (first half = A, second = B)
+                            var half = question.AnswerOptions.Count / 2;
+                            return $"{question.AnswerOptions[a].OptionText} ↔ {question.AnswerOptions[half + b].OptionText}";
+                        })
+                        .ToArray(),
+
+            _ => Array.Empty<string>()
+        };
+    }
+}

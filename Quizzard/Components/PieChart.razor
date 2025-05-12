@@ -1,0 +1,96 @@
+﻿@using System.Globalization
+
+<svg width="@Size" height="@Size" viewBox="0 0 @Size @Size">
+    @for (int i = 0; i < Values.Length; i++)
+    {
+        // slice path + fill
+        var (d, color, midAngle) = Paths[i];
+        <path d="@d" fill="@color" stroke="white" stroke-width="1" />
+
+        // compute label position along the mid-angle, at 0.6×radius
+
+          var xText = Cx + 0.6 * R * Math.Cos(midAngle);
+          var yText = Cy + 0.6 * R * Math.Sin(midAngle);
+
+          <PieChartText
+            xText="@xText"
+            yText="@yText"
+            labelText="@GetLabel(i)"/>
+    }
+</svg>
+
+@code {
+    [Parameter] public double[] Values { get; set; } = Array.Empty<double>();
+    [Parameter] public string[] Colors { get; set; } = Array.Empty<string>();
+    [Parameter] public string[] Labels { get; set; } = Array.Empty<string>();
+    [Parameter] public int Size   { get; set; } = 200;
+
+    // center & radius
+    private double Cx => Size / 2.0;
+    private double Cy => Size / 2.0;
+    private double R  => Size / 2.0;
+
+    // Returns for each slice: (pathData, fillColor, midAngleInRadians)
+    private (string PathData, string Color, double MidAngle)[]
+        Paths => ComputePaths();
+
+    private (string, string, double)[] ComputePaths()
+    {
+        var total = Values.Sum();
+        var paths = new List<(string, string, double)>();
+        double cumulative = 0;
+
+        for (int i = 0; i < Values.Length; i++)
+        {
+            var fraction   = Values[i] / total;
+            var sweepDeg   = fraction * 360.0;
+            var startDeg   = cumulative;
+            var endDeg     = cumulative + sweepDeg;
+            var midDeg     = startDeg + sweepDeg / 2.0;
+
+            // radians
+            var sa = startDeg * Math.PI / 180.0;
+            var ea = endDeg   * Math.PI / 180.0;
+
+            // arc endpoints
+            var x0 = Cx + R * Math.Cos(sa);
+            var y0 = Cy + R * Math.Sin(sa);
+            var x1 = Cx + R * Math.Cos(ea);
+            var y1 = Cy + R * Math.Sin(ea);
+
+            // large-arc-flag
+            var laf = sweepDeg > 180 ? 1 : 0;
+
+            // build path: move, arc, line back, close
+            var d = string.Format(CultureInfo.InvariantCulture,
+                "M {0:F2},{1:F2} " +        // start
+                "A {2},{2} 0 {3} 1 {4:F2},{5:F2} " +  // arc
+                "L {6:F2},{7:F2} Z",       // line to center + close
+                x0, y0, R, laf, x1, y1, Cx, Cy
+            );
+
+            var color = i < Colors.Length
+                        ? Colors[i]
+                        : $"hsl({i * 360.0 / Values.Length:F0},70%,60%)";
+
+            // midAngle in radians for label placement
+            var midAngle = midDeg * Math.PI / 180.0;
+
+            paths.Add((d, color, midAngle));
+            cumulative += sweepDeg;
+        }
+
+        return paths.ToArray();
+    }
+
+    private string GetLabel(int idx)
+    {
+        if (idx < Labels.Length)
+            return Labels[idx];
+        // fallback: percent
+        var pct = Values.Sum() > 0
+            ? Values[idx] / Values.Sum() * 100
+            : 0;
+        return $"{pct:F0}%";
+    }
+}

@@ -15,6 +15,12 @@
         var userAnswer = userAnswers.FirstOrDefault(a => a.QuestionId == question.Id);
         <div>
             <p>@question.Text</p>
+            <div>
+            @if (!string.IsNullOrEmpty(question.ImagePath))
+            {
+                <img src="@question.ImagePath" class="question-image" />
+            }
+            </div>
             @if (question is MultipleChoiceQuestion)
             {
                 <!-- Multiple choice: display checkboxes -->

@@ -22,6 +22,7 @@ else
             <li>
                 @quiz.Title
                 <button @onclick="() => NavigateToQuiz(quiz.Id)">Start Quiz</button>
+                <button @onclick="() => NaviagteToStatistics(quiz.Id)">Stats</button>
             </li>
         }
     </ul>
@@ -48,5 +49,10 @@ else
     private void NavigateToQuiz(int quizId)
     {
         Navigation.NavigateTo($"/quizzes/{quizId}");
+    }
+
+    private void NaviagteToStatistics(int quizId)
+    {
+        Navigation.NavigateTo($"/quiz-stats/{quizId}");
     }
 }

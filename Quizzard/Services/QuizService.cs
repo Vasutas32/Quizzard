@@ -72,21 +72,75 @@ namespace Quizzard.Services
         }
 
 
+        public async Task<QuizStatistic> GetQuizStatisticsAsync(int quizId)
+        {
+            // Load all completed results and their answers:
+            var results = await _context.UserQuizResults
+                .Include(r => r.Answers)
+                .Where(r => r.QuizId == quizId)
+                .ToListAsync();
 
-        //public async Task<Dictionary<int, int[]>> GetQuestionStatisticsAsync(int quizId)
-        //{
-        //    var statistics = await _context.UserAnswers
-        //        .Where(a => a.Question.Quiz.Id == quizId)
-        //        .GroupBy(a => a.QuestionId)
-        //        .Select(g => new
-        //        {
-        //            QuestionId = g.Key,
-        //            OptionCounts = g.GroupBy(a => a.SelectedAnswerIndex)
-        //                            .ToDictionary(opt => opt.Key, opt => opt.Count())
-        //        })
-        //        .ToDictionaryAsync(x => x.QuestionId, x => x.OptionCounts);
+            var quiz = await _context.Quizzes
+                .Include(q => q.Questions)
+                .FirstOrDefaultAsync(q => q.Id == quizId);
+            if (quiz == null) throw new Exception("Quiz not found");
 
-        //    return statistics;
-        //}
+            var stats = new QuizStatistic
+            {
+                QuizId = quizId,
+                QuizTitle = quiz.Title,
+                TotalAttempts = results.Count,
+                PerfectAttempts = results.Count(r => r.WrongAnswers == 0),
+                AverageScore = results.Average(r => (double)r.CorrectAnswers / quiz.Questions.Count)
+            };
+
+            // Per-question
+            foreach (var q in await _context.Questions
+                   .Where(q => q.QuizId == quizId)
+                   .Include(q => q.AnswerOptions)
+                   .ToListAsync())
+            {
+                var qStat = new QuestionStatistics
+                {
+                    QuestionId = q.Id,
+                    QuestionText = q.Text,
+                    TotalCount = results.SelectMany(r => r.Answers)
+                                          .Count(a => a.QuestionId == q.Id),
+                    CorrectCount = results.SelectMany(r => r.Answers)
+                                          .Count(a => a.QuestionId == q.Id && a.IsCorrect)
+                };
+
+                // tally picks
+                var picks = results.SelectMany(r => r.Answers)
+                    .Where(a => a.QuestionId == q.Id);
+
+                if (q is SingleChoiceQuestion || q is MultipleChoiceQuestion)
+                {
+                    // for each option text, count how many answers used that index
+                    foreach (var opt in q.AnswerOptions)
+                    {
+                        var idx = q.AnswerOptions.IndexOf(opt).ToString();
+                        qStat.OptionPickCounts[opt.OptionText] =
+                            picks.Count(a => a.SelectedAnswer?.Split(';').Contains(idx) == true);
+                    }
+                }
+                else if (q is TrueFalseQuestion)
+                {
+                    qStat.OptionPickCounts["True"] = picks.Count(a => a.SelectedAnswer == "1");
+                    qStat.OptionPickCounts["False"] = picks.Count(a => a.SelectedAnswer == "0");
+                }
+                else if (q is TextInputQuestion)
+                {
+                    // count each distinct input
+                    foreach (var group in picks.GroupBy(a => a.SelectedAnswer))
+                        qStat.OptionPickCounts[group.Key] = group.Count();
+                }
+                // pairing could be handled similarly…
+
+                stats.Questions.Add(qStat);
+            }
+
+            return stats;
+        }
     }
 }

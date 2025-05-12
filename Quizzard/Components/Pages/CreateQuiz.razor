@@ -1,6 +1,7 @@
 ﻿@page "/create-quiz"
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
+@inject IWebHostEnvironment Env
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 @using Microsoft.AspNetCore.Components
@@ -100,6 +101,11 @@
             default:
                 break;
         }
+        <InputFile OnChange="e => OnImageSelected(question, e)" />
+        @if (!string.IsNullOrEmpty(question.ImagePath))
+        {
+            <img src="@question.ImagePath" alt="Preview" style="max-width:200px;display:block;margin-top:.5em" />
+        }
         <button @onclick="() => RemoveQuestion(question)">Remove</button>
         <hr />
     </div>
@@ -114,6 +120,9 @@
     private string quizTitle = "";
     private List<Question> questions = new();
     private QuestionType selectedQuestionType = QuestionType.SingleChoice;
+
+    // [Inject] private IWebHostEnvironment Env { get; set; }
+
 
     private void Bello()
     {
@@ -243,16 +252,24 @@
         Navigation.NavigateTo("/quizzes");
     }
 
-    void UpdateOption(Question question, int index, string value)
+    async Task OnImageSelected(Question question, InputFileChangeEventArgs e)
     {
-        // // Ensure the list has enough elements
-        // while (question.AnswerOptions.Count <= index)
-        // {
-        //     question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
-        // }
-        // // Now we can safely assign the value
-        // question.AnswerOptions[index].OptionText = value;
+        var file = e.File;
+        // generate a unique name
+        var ext = Path.GetExtension(file.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var saveDir = Path.Combine(Env.WebRootPath, "uploads");
+        Directory.CreateDirectory(saveDir);
+        var savePath = Path.Combine(saveDir, fileName);
+
+        // actually copy
+        await using var fs = File.OpenWrite(savePath);
+        await file.OpenReadStream(maxAllowedSize: 10_000_000).CopyToAsync(fs);
+
+        // save the *relative* path back into your model
+        question.ImagePath = $"uploads/{fileName}";
     }
+
 
     [Inject] private NavigationManager Navigation { get; set; }
 }
