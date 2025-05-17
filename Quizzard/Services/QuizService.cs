@@ -85,13 +85,19 @@ namespace Quizzard.Services
                 .FirstOrDefaultAsync(q => q.Id == quizId);
             if (quiz == null) throw new Exception("Quiz not found");
 
+            double avgScore = 0;
+            if (results.Count > 0)
+            {
+                avgScore = results.Average(r => (double)r.CorrectAnswers / quiz.Questions.Count);
+            }
+
             var stats = new QuizStatistic
             {
                 QuizId = quizId,
                 QuizTitle = quiz.Title,
                 TotalAttempts = results.Count,
                 PerfectAttempts = results.Count(r => r.WrongAnswers == 0),
-                AverageScore = results.Average(r => (double)r.CorrectAnswers / quiz.Questions.Count)
+                AverageScore = avgScore
             };
 
             // Per-question

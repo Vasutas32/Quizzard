@@ -1,4 +1,21 @@
-﻿.question-image {
+﻿.qr-container {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: auto;
+    height: auto;
+    max-width: 128px;
+    max-height: 128px;
+}
+
+.qr-code {
+    width: auto;
+    height: auto;
+    max-width: 128px;
+    max-height: 128px;
+    border: 1px solid #ccc;
+}
+.question-image {
     max-width: 640px;
     max-height: 360px;
     width: auto;

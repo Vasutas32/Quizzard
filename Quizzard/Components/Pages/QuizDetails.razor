@@ -1,14 +1,25 @@
 ﻿@page "/quizzes/{quizId:int}"
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
+@inject Quizzard.Services.IQrCodeService QrCodeService
 @inject NavigationManager Navigation
+@using QRCoder
 @using Quizzard.Models
 @using Quizzard.Models.Questions
+@using System.Drawing
+
 
 <h3>Quiz Details</h3>
 
 @if (quiz != null)
 {
+
+    <div class="qr-container">
+        @if (!string.IsNullOrEmpty(QrDataUrl))
+        {
+            <img src="@QrDataUrl" alt="Scan to take this quiz" class="qr-code" />
+        }
+    </div>
     <h4>@quiz.Title</h4>
     @foreach (var question in quiz.Questions)
     {
@@ -21,7 +32,18 @@
                 <img src="@question.ImagePath" class="question-image" />
             }
             </div>
-            @if (question is MultipleChoiceQuestion)
+            @if (question is SingleChoiceQuestion)
+            {
+                <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
+                    @for (int i = 0; i < question.AnswerOptions.Count; i++)
+                    {
+                        <label>
+                            <InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
+                        </label>
+                    }
+                </InputRadioGroup>
+            }
+            else if (question is MultipleChoiceQuestion)
             {
                 <!-- Multiple choice: display checkboxes -->
                 @for (int i = 0; i < question.AnswerOptions.Count; i++)
@@ -35,17 +57,6 @@
                     </label>
                     <br />
                 }
-            }
-            else if (question is SingleChoiceQuestion)
-            {
-                <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
-                    @for (int i = 0; i < question.AnswerOptions.Count; i++)
-                    {
-                        <label>
-                            <InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
-                        </label>
-                    }
-                </InputRadioGroup>
             }
             else if (question is TrueFalseQuestion)
             {
@@ -68,10 +79,10 @@
                         @for (int i = 0; i < pq.ColumnA.Count; i++)
                         {
                             var index = i;
-                            var isSelected = selectedA[question.Id] == index;
-                            var isPaired = pairs[question.Id].ContainsKey(index);
-                            <button style="margin:0.2rem;
-                                       background:@(isPaired ? "#ccc" : isSelected ? "#8cf" : "#fff");"
+							var bg = pairs[question.Id].ContainsKey(index)
+							? ColorForPair(question.Id, index)
+							: "white";
+                            <button style="margin:0.2rem; background:@bg;"
                                     @onclick="() => OnClickA(question.Id, index)">
                                 @pq.ColumnA[index]
                             </button>
@@ -83,10 +94,14 @@
                         @for (int j = 0; j < pq.ColumnB.Count; j++)
                         {
                             var index = j;
-                            var isSelected = selectedB[question.Id] == index;
-                            var isPaired = pairs[question.Id].Values.Contains(index);
-                            <button style="margin:0.2rem;
-                                       background:@(isPaired ? "#ccc" : isSelected ? "#8cf" : "#fff");"
+                            var pairedA = pairs[question.Id]
+                            .FirstOrDefault(kv => kv.Value == index).Key;
+                            string bg = "white";
+                            if (TryGetPairedA(question.Id, index, out var ai))
+                            {
+                                bg = ColorForPair(question.Id, ai);
+                            }
+                            <button style="margin:0.2rem; background:@bg;"
                                     @onclick="() => OnClickB(question.Id, index)">
                                 @pq.ColumnB[index]
                             </button>
@@ -113,9 +128,24 @@ else
     private Dictionary<int, int?> selectedB = new();
     private Dictionary<int, Dictionary<int, int>> pairs = new();
 
+    private static readonly string[] PairColors = new[]
+     {
+    "#FF0000", "#BAE1FF", "#B4DA55", "#FFFFBA", "#E2BAFF", "#FFDAC1"
+  };
+    private Dictionary<int, Dictionary<int, string>> _pairColors
+      = new Dictionary<int, Dictionary<int, string>>();
+    private Dictionary<int, int> _nextPairColorIndex = new();
+
+    private string QrDataUrl;
+
+
+
     protected override async Task OnInitializedAsync()
     {
         quiz = await QuizService.GetQuizByIdAsync(quizId);
+
+        var absoluteUri = Navigation.ToAbsoluteUri($"/quizzes/{quizId}").ToString();
+        QrDataUrl = await QrCodeService.GenerateQrCodeDataUrlAsync(absoluteUri);
 
         // Sort answer options for each question if needed (e.g., by Id)
         foreach (var question in quiz.Questions)
@@ -158,14 +188,31 @@ else
 
     void OnClickA(int qid, int ai)
     {
-        // deselect if same
-        if (selectedA[qid] == ai) { selectedA[qid] = null; return; }
+        // toggle‐off if clicked twice
+        if (selectedA[qid] == ai)
+        {
+            selectedA[qid] = null;
+            return;
+        }
         selectedA[qid] = ai;
 
-        // if B already has one, pair and clear
+        // if B had already a selection, commit the pair
         if (selectedB[qid].HasValue)
         {
-            pairs[qid][ai] = selectedB[qid].Value;
+            var bi = selectedB[qid].Value;
+
+            // remove any existing pairing that pointed to this bi:
+            if (TryGetPairedA(qid, bi, out var oldA))
+            {
+                pairs[qid].Remove(oldA);
+                _pairColors[qid].Remove(oldA);
+            }
+
+            // add the new pairing and assign it a fresh color
+            pairs[qid][ai] = bi;
+            EnsureHasColor(qid, ai);
+
+            // clear temporary selections
             selectedA[qid] = selectedB[qid] = null;
             UpdateUserAnswer(qid);
         }
@@ -173,15 +220,82 @@ else
 
     void OnClickB(int qid, int bi)
     {
-        if (selectedB[qid] == bi) { selectedB[qid] = null; return; }
+        // toggle‐off if clicked twice
+        if (selectedB[qid] == bi)
+        {
+            selectedB[qid] = null;
+            return;
+        }
         selectedB[qid] = bi;
 
+        // if A had already a selection, commit the pair
         if (selectedA[qid].HasValue)
         {
-            pairs[qid][selectedA[qid].Value] = bi;
+            var ai = selectedA[qid].Value;
+
+            // remove any existing pairing that pointed to this bi:
+            if (TryGetPairedA(qid, bi, out var oldA))
+            {
+                pairs[qid].Remove(oldA);
+                _pairColors[qid].Remove(oldA);
+            }
+
+            // add the new pairing and assign it a fresh color
+            pairs[qid][ai] = bi;
+            EnsureHasColor(qid, ai);
+
+            // clear temporary selections
             selectedA[qid] = selectedB[qid] = null;
             UpdateUserAnswer(qid);
         }
+    }
+
+
+
+    private void EnsureHasColor(int qid, int aIndex)
+    {
+        if (!_pairColors.TryGetValue(qid, out var map))
+            _pairColors[qid] = map = new Dictionary<int, string>();
+
+        if (!_nextPairColorIndex.TryGetValue(qid, out var next))
+            _nextPairColorIndex[qid] = next = 0;
+
+        if (!map.ContainsKey(aIndex))
+        {
+            // grab the slot, *then* increment
+            var slot = next;
+            _nextPairColorIndex[qid] = next + 1;
+
+            // pick the color
+            var color = slot < PairColors.Length
+                        ? PairColors[slot]
+                        : $"hsl({slot * 60 % 360},70%,80%)";
+
+            map[aIndex] = color;
+        }
+    }
+
+
+    private bool TryGetPairedA(int qid, int bIndex, out int aIndex)
+    {
+        foreach (var kv in pairs[qid])
+        {
+            if (kv.Value == bIndex)
+            {
+                aIndex = kv.Key;
+                return true;
+            }
+        }
+        aIndex = -1;
+        return false;
+    }
+
+    string ColorForPair(int qid, int aIndex)
+    {
+        if (_pairColors.TryGetValue(qid, out var map) &&
+            map.TryGetValue(aIndex, out var col))
+            return col;
+        return "transparent";
     }
 
     void UpdateUserAnswer(int qid)

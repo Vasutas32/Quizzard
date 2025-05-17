@@ -34,6 +34,24 @@ namespace Quizzard.Models.Questions
             return userAnswer.SelectedAnswer.Equals(this.CorrectAnswer);
 
         }
+
+        public override Question Copy()
+        {
+            var copy = (PairingQuestion)this.MemberwiseClone();
+
+            // 2) Deep‑clone the AnswerOptions list itself:
+            copy.AnswerOptions = this.AnswerOptions
+                .Select(opt => new AnswerOption
+                {
+                    // copy whichever fields AnswerOption has; at minimum:
+                    OptionText = opt.OptionText
+                })
+                .ToList();
+            copy.ColumnA = new List<string>(this.ColumnA);
+            copy.ColumnB = new List<string>(this.ColumnB);
+
+            return copy;
+        }
     }
 
 }

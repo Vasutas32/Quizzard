@@ -10,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddScoped<QuizService>();
+builder.Services.AddScoped<IQrCodeService, QrCodeService>();
 
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 builder.Services.AddDbContext<QuizDbContext>(options => options.UseNpgsql(connectionString));
-//builder.Services.AddChartJsBlazor();
 
 var app = builder.Build();
 

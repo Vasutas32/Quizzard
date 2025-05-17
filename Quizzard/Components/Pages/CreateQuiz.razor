@@ -106,12 +106,13 @@
         {
             <img src="@question.ImagePath" alt="Preview" style="max-width:200px;display:block;margin-top:.5em" />
         }
-        <button @onclick="() => RemoveQuestion(question)">Remove</button>
+        <button @onclick="() => RemoveQuestion(question)">Remove Question</button>
+        <button @onclick="() => CopyQuestion(question)">Copy Question</button>
         <hr />
     </div>
 }
 
-<button @onclick="AddQuestion">Add Question</button>
+<button @onclick="AddQuestion">Add Question</button> <button @onclick="() => PasteQuestion()">Paste Question</button>
 <button @onclick="SaveQuiz">Save Quiz</button>
 <button @onclick="Cancel">Cancel</button>
 <button @onclick="Bello">Do the Bello!</button>
@@ -120,6 +121,7 @@
     private string quizTitle = "";
     private List<Question> questions = new();
     private QuestionType selectedQuestionType = QuestionType.SingleChoice;
+    private Question questionToCopy = null;
 
     // [Inject] private IWebHostEnvironment Env { get; set; }
 
@@ -188,7 +190,7 @@
                 newPairingQuestion.ColumnB = new List<string> { "", "" };
                 newPairingQuestion.SyncAnswerOptionsFromColumns();
                 questions.Add(newPairingQuestion);
-            break;
+                break;
             default: 
                 break;
         }
@@ -218,6 +220,19 @@
     private void RemoveQuestion(Question question)
     {
         questions.Remove(question);
+    }
+
+    private void CopyQuestion(Question question)
+    {
+        questionToCopy = question.Copy();
+    }
+
+    private void PasteQuestion()
+    {
+        if(questionToCopy != null) {
+            var newQuestion = questionToCopy.Copy();
+            questions.Add(newQuestion);
+        }
     }
 
     private void AddOption(Question question)
