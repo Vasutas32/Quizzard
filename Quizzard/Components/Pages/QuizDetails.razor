@@ -13,106 +13,115 @@
 
 @if (quiz != null)
 {
-
-    <div class="qr-container">
-        @if (!string.IsNullOrEmpty(QrDataUrl))
-        {
-            <img src="@QrDataUrl" alt="Scan to take this quiz" class="qr-code" />
-        }
-    </div>
-    <h4>@quiz.Title</h4>
-    @foreach (var question in quiz.Questions)
-    {
-        var userAnswer = userAnswers.FirstOrDefault(a => a.QuestionId == question.Id);
-        <div>
-            <p>@question.Text</p>
-            <div>
-            @if (!string.IsNullOrEmpty(question.ImagePath))
-            {
-                <img src="@question.ImagePath" class="question-image" />
-            }
-            </div>
-            @if (question is SingleChoiceQuestion)
-            {
-                <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
-                    @for (int i = 0; i < question.AnswerOptions.Count; i++)
-                    {
-                        <label>
-                            <InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
-                        </label>
-                    }
-                </InputRadioGroup>
-            }
-            else if (question is MultipleChoiceQuestion)
-            {
-                <!-- Multiple choice: display checkboxes -->
-                @for (int i = 0; i < question.AnswerOptions.Count; i++)
-                {
-                    var index = i;
-                    <label>
-                        <input type="checkbox"
-                        checked="@IsChecked(question.Id, index)"
-                        @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, index, e)" />
-                        @question.AnswerOptions[index].OptionText
-                    </label>
-                    <br />
-                }
-            }
-            else if (question is TrueFalseQuestion)
-            {
-                <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
-                    <!-- For true/false, use the fixed options -->
-                    <InputRadio Value="@(true ? "1" : "0")" /> True
-                    <InputRadio Value="@(false ? "1" : "0")" /> False
-                </InputRadioGroup>
-            }
-            else if (question is TextInputQuestion)
-            {
-                <input type="text" @bind="userAnswer.SelectedAnswer" placeholder="Type your answer..." />
-            }
-            else if (question is PairingQuestion pq)
-            {
-                <div style="display:flex; gap:2rem;">
-                    <!-- Column A -->
-                    <div>
-                        <h5>Column A</h5>
-                        @for (int i = 0; i < pq.ColumnA.Count; i++)
-                        {
-                            var index = i;
-							var bg = pairs[question.Id].ContainsKey(index)
-							? ColorForPair(question.Id, index)
-							: "white";
-                            <button style="margin:0.2rem; background:@bg;"
-                                    @onclick="() => OnClickA(question.Id, index)">
-                                @pq.ColumnA[index]
-                            </button>
-                        }
-                    </div>
-                    <!-- Column B -->
-                    <div>
-                        <h5>Column B</h5>
-                        @for (int j = 0; j < pq.ColumnB.Count; j++)
-                        {
-                            var index = j;
-                            var pairedA = pairs[question.Id]
-                            .FirstOrDefault(kv => kv.Value == index).Key;
-                            string bg = "white";
-                            if (TryGetPairedA(question.Id, index, out var ai))
-                            {
-                                bg = ColorForPair(question.Id, ai);
-                            }
-                            <button style="margin:0.2rem; background:@bg;"
-                                    @onclick="() => OnClickB(question.Id, index)">
-                                @pq.ColumnB[index]
-                            </button>
-                        }
-                    </div>
-                </div>
-            }
-
+    @if(_submitted) {
+        <div class="alert alert-success">
+            <h4>Your score</h4>
+            <p>You got <strong>@_correct</strong> out of <strong>@_total</strong> correct.</p>
+            <button class="btn btn-primary" @onclick="() => Navigation.NavigateTo(navigationString)">Back</button>
         </div>
     }
+    else {
+        <div class="qr-container">
+            @if (!string.IsNullOrEmpty(QrDataUrl))
+            {
+                <img src="@QrDataUrl" alt="Scan to take this quiz" class="qr-code" />
+            }
+        </div>
+
+        <h4>@quiz.Title</h4>
+        @foreach (var question in quiz.Questions)
+        {
+            var userAnswer = userAnswers.FirstOrDefault(a => a.QuestionId == question.Id);
+            <div>
+                <p>@question.Text</p>
+                <div>
+                    @if (!string.IsNullOrEmpty(question.ImagePath))
+                    {
+                        <img src="@question.ImagePath" class="question-image" />
+                    }
+                </div>
+                @if (question is SingleChoiceQuestion)
+                {
+                    <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
+                        @for (int i = 0; i < question.AnswerOptions.Count; i++)
+                        {
+                            <label>
+                                <InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
+                            </label>
+                        }
+                    </InputRadioGroup>
+                }
+                else if (question is MultipleChoiceQuestion)
+                {
+                    <!-- Multiple choice: display checkboxes -->
+                    @for (int i = 0; i < question.AnswerOptions.Count; i++)
+                    {
+                        var index = i;
+                        <label>
+                            <input type="checkbox"
+                            checked="@IsChecked(question.Id, index)"
+                            @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, index, e)" />
+                            @question.AnswerOptions[index].OptionText
+                        </label>
+                        <br />
+                    }
+                }
+                else if (question is TrueFalseQuestion)
+                {
+                    <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
+                        <!-- For true/false, use the fixed options -->
+                        <InputRadio Value="@(true ? "1" : "0")" /> True
+                        <InputRadio Value="@(false ? "1" : "0")" /> False
+                    </InputRadioGroup>
+                }
+                else if (question is TextInputQuestion)
+                {
+                    <input type="text" @bind="userAnswer.SelectedAnswer" placeholder="Type your answer..." />
+                }
+                else if (question is PairingQuestion pq)
+                {
+                    <div style="display:flex; gap:2rem;">
+                        <!-- Column A -->
+                        <div>
+                            <h5>Column A</h5>
+                            @for (int i = 0; i < pq.ColumnA.Count; i++)
+                            {
+                                var index = i;
+                                var bg = pairs[question.Id].ContainsKey(index)
+                                ? ColorForPair(question.Id, index)
+                                : "white";
+                                <button style="margin:0.2rem; background:@bg;"
+                                @onclick="() => OnClickA(question.Id, index)">
+                                    @pq.ColumnA[index]
+                                </button>
+                            }
+                        </div>
+                        <!-- Column B -->
+                        <div>
+                            <h5>Column B</h5>
+                            @for (int j = 0; j < pq.ColumnB.Count; j++)
+                            {
+                                var index = j;
+                                var pairedA = pairs[question.Id]
+                                .FirstOrDefault(kv => kv.Value == index).Key;
+                                string bg = "white";
+                                if (TryGetPairedA(question.Id, index, out var ai))
+                                {
+                                    bg = ColorForPair(question.Id, ai);
+                                }
+                                <button style="margin:0.2rem; background:@bg;"
+                                @onclick="() => OnClickB(question.Id, index)">
+                                    @pq.ColumnB[index]
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+            </div>
+        }
     <button @onclick="SubmitQuiz">Submit Quiz</button>
+    }
 }
 else
 {
@@ -123,6 +132,7 @@ else
     [Parameter] public int quizId { get; set; }
     private Quiz quiz;
     private List<UserAnswer> userAnswers = new List<UserAnswer>();
+    private const string navigationString = @"\quizzes";
 
     private Dictionary<int, int?> selectedA = new();
     private Dictionary<int, int?> selectedB = new();
@@ -137,7 +147,8 @@ else
     private Dictionary<int, int> _nextPairColorIndex = new();
 
     private string QrDataUrl;
-
+    private bool _submitted;
+    private int _correct, _total;
 
 
     protected override async Task OnInitializedAsync()
@@ -351,6 +362,9 @@ else
             };
 
         await QuizService.SaveQuizResultAsync(quizResult);
-        Navigation.NavigateTo("/quizzes");
+        _total = userAnswers.Count;
+        _correct = userAnswers.Count(a => a.IsCorrect);
+        _submitted = true;
+        // Navigation.NavigateTo("/quizzes");
     }
 }

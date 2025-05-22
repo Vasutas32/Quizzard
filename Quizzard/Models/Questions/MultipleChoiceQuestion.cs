@@ -1,7 +1,12 @@
-﻿namespace Quizzard.Models.Questions
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Quizzard.Models.Questions
 {
     public class MultipleChoiceQuestion : Question
     {
+        [NotMapped]
+        public List<int> CorrectAnswerIndices { get; set; } = new List<int>();
+
         public MultipleChoiceQuestion()
         {
             Type = QuestionType.MultipleChoice;
@@ -26,6 +31,24 @@
                 .ToList();
 
             return correct.SequenceEqual(selected);
+        }
+
+        public override Question Copy()
+        {
+            var copy = (MultipleChoiceQuestion)this.MemberwiseClone();
+
+            // 2) Deep‑clone the AnswerOptions list itself:
+            copy.AnswerOptions = this.AnswerOptions
+                .Select(opt => new AnswerOption
+                {
+                    // copy whichever fields AnswerOption has; at minimum:
+                    OptionText = opt.OptionText
+                })
+                .ToList();
+
+            copy.CorrectAnswerIndices = new List<int>(this.CorrectAnswerIndices);
+
+            return copy;
         }
     }
 

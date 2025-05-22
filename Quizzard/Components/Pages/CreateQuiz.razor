@@ -30,7 +30,9 @@
         <input @bind="question.Text" placeholder="Question text" />
         <br />
 
+        <!-- Depending on what the question type is render the question differently-->
         @switch (question){
+
             case SingleChoiceQuestion scq:
                 @for (int i = 0; i < scq.AnswerOptions.Count; i++)
                 {
@@ -50,12 +52,11 @@
                     }
                 </select>
                 break;
+
             case MultipleChoiceQuestion mcq:
-                <!-- Render dynamic answer options for Multiple Choice -->
                 @for (int i = 0; i < mcq.AnswerOptions.Count; i++)
                 {
                     var index = i;
-                    <!-- capture index locally -->
                     <input @bind="mcq.AnswerOptions[index].OptionText"
                     placeholder=@($"Option {index + 1}") />
                 }
@@ -63,27 +64,38 @@
                 <button @onclick="() => AddOption(mcq)">+</button>
                 <button @onclick="() => RemoveOption(mcq)" disabled="@(mcq.AnswerOptions.Count <= 2)">–</button>
                 <br />
-                <label>Correct Answers (semicolon separated indices):</label>
-                <!-- For multiple choice, creator enters something like "0;3" -->
-                <input @bind="mcq.CorrectAnswer" placeholder="e.g., 0;3" />
+                <label>Mark the correct options:</label>
+                @for (int i = 0; i < mcq.AnswerOptions.Count; i++)
+                {
+                    <br />
+                    var index = i;
+                    <label>
+                        <input type="checkbox"
+                        checked="@mcq.CorrectAnswerIndices.Contains(index)"
+                        @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(mcq, index, e)" />
+                        @mcq.AnswerOptions[index].OptionText
+                    </label>
+                }
                 break;
+
             case TrueFalseQuestion tfq:
-                <!-- For True/False, the options are fixed; show a message and a dropdown -->
                 <p>This is a True/False question. Options are fixed: True and False.</p>
                 <label>Correct Answer:</label>
                 <select @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
-                    <!-- Use "1" for True and "0" for False -->
                     <option value="1">True</option>
                     <option value="0">False</option>
                 </select>
-
                 break;
+
             case TextInputQuestion tiq:
                 <label>Correct Answers (semicolon separated):</label>
                 <input @bind="question.CorrectAnswer" placeholder="e.g., cat;feline" />
                 break;
+
             case PairingQuestion pq:
-                <p>Pairing:</p>
+                var aCount = pq.ColumnA.Count;
+                var bCount = pq.ColumnB.Count;
+                var pairs = pq.CorrectPairs;
                 @for (int row = 0; row < pq.ColumnA.Count; row++)
                 {
                     var index = row;
@@ -95,12 +107,37 @@
                 <button @onclick="() => AddPairRow(pq)">+ Row</button>
                 <button @onclick="() => RemovePairRow(pq)" disabled="@(pq.ColumnA.Count <= 2)">– Row</button>
                 <br />
-                <label>Correct Pairs:</label>
-                <input @bind="pq.CorrectAnswer" placeholder="e.g. 02;13;20;31" />
+                @*  <label>Correct Pairs:</label>
+                <input @bind="pq.CorrectAnswer" placeholder="e.g. 02;13;20;31" /> *@
+                <label class="mt-3">Set the correct match for each “A”:</label>
+
+                @for (int a = 0; a < aCount; a++)
+                {
+                    // scrap the inline lambda & string parsing in-markup...
+                    // instead capture the selected B value into a local:
+                    var index = a;
+                    var selectedB = pairs.TryGetValue(index, out var b) ? b : -1;
+                    <div class="d-flex align-items-center mb-2">
+                        <strong class="me-2">@pq.ColumnA[index] ↔</strong>
+                        <select class="form-select w-auto"
+                        value="@selectedB"
+                        @onchange="@(e => OnPairSelectionChanged(pq, index, int.Parse(e.Value?.ToString() ?? "-1")) )">
+                            <option value="-1">(choose…)</option>
+                            @for (int beck = 0; beck < bCount; beck++)
+                            {
+								var indexB = beck;
+                                <option value="@indexB">@pq.ColumnB[indexB]</option>
+                            }
+                        </select>
+                    </div>
+                }
+
                 break;
             default:
                 break;
         }
+        <br/>
+        <br/>
         <InputFile OnChange="e => OnImageSelected(question, e)" />
         @if (!string.IsNullOrEmpty(question.ImagePath))
         {
@@ -143,11 +180,11 @@
                     new AnswerOption { OptionText = "" },
                     new AnswerOption { OptionText = "" }
                 },
-                    // Default: correct answer is the first option (as a string "0")
                         CorrectAnswer = "0"
                     };
                 questions.Add(newSingleChoiceQuestion);
                 break;
+
             case QuestionType.MultipleChoice:
                 var newMultipleChoiceQuestion = new MultipleChoiceQuestion
                     {
@@ -156,7 +193,6 @@
                     new AnswerOption { OptionText = "" },
                     new AnswerOption { OptionText = "" }
                 },
-                    // Default: no correct answers initially
                         CorrectAnswer = ""
                     };
                 questions.Add(newMultipleChoiceQuestion);
@@ -164,33 +200,32 @@
             case QuestionType.TrueFalse:
                 var newTrueFalseQuestion = new TrueFalseQuestion
                     {
-                    // For True/False, auto-create fixed answer options:
                         AnswerOptions = new List<AnswerOption>
                 {
                     new AnswerOption { OptionText = "True" },
                     new AnswerOption { OptionText = "False" }
                 },
-                    // Default correct answer is "1" (True)
                         CorrectAnswer = "1"
                     };
                 questions.Add(newTrueFalseQuestion);
                 break;
+
             case QuestionType.TextInput:
                 var newTextInputQuestion = new TextInputQuestion
                     {
-                        CorrectAnswer = "", // Can be multiple acceptable answers separated by semicolons
+                        CorrectAnswer = "",
                     };
                 questions.Add(newTextInputQuestion);
                 break;
-            case QuestionType.Pairing:
 
-                // start with 2 rows = 4 options
+            case QuestionType.Pairing:
                 var newPairingQuestion = new PairingQuestion{CorrectAnswer = ""};
                 newPairingQuestion.ColumnA = new List<string> { "", "" };
                 newPairingQuestion.ColumnB = new List<string> { "", "" };
                 newPairingQuestion.SyncAnswerOptionsFromColumns();
                 questions.Add(newPairingQuestion);
                 break;
+
             default: 
                 break;
         }
@@ -248,11 +283,40 @@
             question.AnswerOptions.RemoveAt(question.AnswerOptions.Count - 1);
     }
 
+    void OnCorrectOptionChange(MultipleChoiceQuestion mcq, int idx, ChangeEventArgs e)
+    {
+        var isChecked = e.Value?.ToString()?.ToLower() == "true";
+        if (isChecked)
+        {
+            if (!mcq.CorrectAnswerIndices.Contains(idx))
+                mcq.CorrectAnswerIndices.Add(idx);
+        }
+        else
+        {
+            mcq.CorrectAnswerIndices.Remove(idx);
+        }
+    }
+
+    void OnPairSelectionChanged(PairingQuestion pq, int aIndex, int bIndex)
+    {
+        // assign or re‑assign the correct B for this A
+        pq.CorrectPairs[aIndex] = bIndex;
+    }
+
+
+
     private async Task SaveQuiz()
     {
+        foreach (var mcq in questions.OfType<MultipleChoiceQuestion>())
+        {
+            // turn [0,2,3] into "0;2;3"
+            mcq.CorrectAnswer = string.Join(";", mcq.CorrectAnswerIndices.OrderBy(x => x));
+        }
+
         foreach (var pq in questions.OfType<PairingQuestion>())
         {
             pq.SyncAnswerOptionsFromColumns();
+            pq.SyncCorrectAnswerFromPairs();
         }
         if (!string.IsNullOrWhiteSpace(quizTitle) && questions.Count > 0)
         {

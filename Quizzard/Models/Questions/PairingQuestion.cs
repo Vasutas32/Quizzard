@@ -8,8 +8,10 @@ namespace Quizzard.Models.Questions
         public List<string> ColumnA { get; set; } = new List<string>();
         [NotMapped]
         public List<string> ColumnB { get; set; } = new List<string>();
-        // Mapping: key is index in ColumnA, value is the index in ColumnB that is the correct pair.
-        //public Dictionary<int, int> CorrectPairs { get; set; } = new Dictionary<int, int>();
+
+
+        [NotMapped]
+        public Dictionary<int, int> CorrectPairs { get; set; } = new();
 
         public PairingQuestion()
         {
@@ -21,16 +23,17 @@ namespace Quizzard.Models.Questions
             foreach (var text in ColumnA) AnswerOptions.Add(new AnswerOption { OptionText = text });
             foreach (var text in ColumnB) AnswerOptions.Add(new AnswerOption { OptionText = text });
         }
+        public void SyncCorrectAnswerFromPairs()
+        {
+            // e.g. pairs {0→2, 1→0} → "02;10"
+            CorrectAnswer = string.Join(";",
+              CorrectPairs
+                .OrderBy(kv => kv.Key)
+                .Select(kv => $"{kv.Key}{kv.Value}")
+            );
+        }
         public override bool IsAnswerCorrect(UserAnswer userAnswer)
         {
-            //// Assume UserAnswer contains a dictionary mapping indices from ColumnA to ColumnB
-            //// e.g., UserAnswer.Pairings: Dictionary<int, int>
-            //if (userAnswer.Pairings == null)
-            //    return false;
-
-            //// Check if all provided pairs are correct
-            //return CorrectPairs.OrderBy(pair => pair.Key)
-            //    .SequenceEqual(userAnswer.Pairings.OrderBy(pair => pair.Key));
             return userAnswer.SelectedAnswer.Equals(this.CorrectAnswer);
 
         }
