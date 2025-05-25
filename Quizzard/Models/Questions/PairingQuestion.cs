@@ -42,7 +42,7 @@ namespace Quizzard.Models.Questions
         {
             var copy = (PairingQuestion)this.MemberwiseClone();
 
-            // 2) Deep‑clone the AnswerOptions list itself:
+            // Deep‑clone the AnswerOptions list itself:
             copy.AnswerOptions = this.AnswerOptions
                 .Select(opt => new AnswerOption
                 {

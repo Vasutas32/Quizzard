@@ -30,14 +30,12 @@ else
             </tbody>
         </table>
 
-        <!-- Show the correct answer(s): -->
         <p>
             Correct Answer(s):
             @string.Join(", ",
                     GetCorrectAnswerTexts(qStat.QuestionId))
         </p>
 
-        <!-- PieChart component: -->
         <PieChart Values="GetValues(qStat)"
                   Colors="GetColors(qStat)"
                   Labels="qStat.OptionPickCounts.Keys.ToArray()"
@@ -59,15 +57,12 @@ else
         stats = await QuizService.GetQuizStatisticsAsync(quizId);
     }
 
-    /// <summary>
-    /// Pulls out the counts as doubles for the PieChart.
-    /// </summary>
+    // Pulls out the counts as doubles for the PieChart.
     private double[] GetValues(QuestionStatistics qStat)
         => qStat.OptionPickCounts.Values.Select(c => (double)c).ToArray();
 
-    /// <summary>
-    /// Generates one color per slice (just cycling HSL here).
-    /// </summary>
+
+    // Generates one color per slice (just cycling HSL here).
     private string[] GetColors(QuestionStatistics qStat)
     {
         var n = qStat.OptionPickCounts.Count;
@@ -76,10 +71,7 @@ else
             .ToArray();
     }
 
-    /// <summary>
-    /// Finds the correct answer indices from the original quiz question
-    /// and maps them back to the option texts.
-    /// </summary>
+    // Finds the correct answer indices from the original quiz question and maps them back to the option texts.
     private string[] GetCorrectAnswerTexts(int questionId)
     {
         var question = quiz.Questions

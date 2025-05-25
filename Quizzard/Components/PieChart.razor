@@ -4,7 +4,6 @@
     @{var nonZeroCount = Values.Count(v => v > 0);}
     @if (nonZeroCount == 1)
     {
-        Checker();
         var idx = Array.FindIndex(Values, v => v > 0);
         var fill = Colors.Length > 0 ? Colors[0] : $"hsl(0,70%,60%)";
         <circle 
@@ -17,7 +16,6 @@
     }
     else
     {
-        Checker2(); 
         @for (int i = 0; i < Values.Length; i++)
         {
             if (Values[i] <= 0)
@@ -49,15 +47,6 @@
     private double Cx => Size / 2.0;
     private double Cy => Size / 2.0;
     private double R  => Size / 2.0;
-
-    void Checker()
-    {
-        Console.WriteLine($"Cx: {Cx}, Cy: {Cy}, R: {R}");
-    }
-    void Checker2()
-    {
-        Console.WriteLine($"Cx: {Cx}, Cy: {Cy}, R: {R}");
-    }
 
     // Returns for each slice: (pathData, fillColor, midAngleInRadians)
     private (string PathData, string Color, double MidAngle)[]
