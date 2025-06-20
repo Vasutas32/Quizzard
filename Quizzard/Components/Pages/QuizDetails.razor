@@ -90,7 +90,7 @@
                                 var bg = pairs[question.Id].ContainsKey(index)
                                 ? ColorForPair(question.Id, index)
                                 : "white";
-                                <button style="margin:0.2rem; background:@bg;"
+                                <button class="btn" style="margin:0.2rem; background:@bg;"
                                 @onclick="() => OnClickA(question.Id, index)">
                                     @pq.ColumnA[index]
                                 </button>

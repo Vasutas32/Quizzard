@@ -9,25 +9,31 @@
 <h3>Create a New Quiz</h3>
 
 <!-- Quiz Title Input -->
-<input @bind="quizTitle" placeholder="Enter quiz title" />
+<input class="quiz-name-input" style="margin-bottom: 20px;" @bind="quizTitle" placeholder="Enter quiz title" />
+
+<!-- Add Question Section -->   
+<h4>Add Questions</h4>
 
 <!-- Question Type Selector -->
-<div>
+<div style="margin-bottom: 20px;">
     <label>Select Question Type:</label>
-    <select @bind="selectedQuestionType">
+    <select @bind="selectedQuestionType" style="font-family:'Comic Sans MS';">
         @foreach (QuestionType type in Enum.GetValues(typeof(QuestionType)))
         {
-            <option value="@type">@type</option>
+            <option value="@type" style="font-family:'Comic Sans MS'">@type</option>
         }
     </select>
+<br />
+<div style="margin-top: 20px;">
+<button class="btn btn-primary btn-outline-primary" @onclick="AddQuestion">Add Question</button> <!--TESTING BUTTON FOR STYLE-->
+<button class="btn btn-warning" style="color:white" @onclick="() => PasteQuestion()">Paste Question</button>
 </div>
-
-<!-- Add Question Section -->
-<h4>Add Questions</h4>
+@* <button @onclick="Bello">Do the Bello!</button> *@
+</div>
 @foreach (var question in questions)
 {
     <div>
-        <input @bind="question.Text" placeholder="Question text" />
+        <input class="rounded-pill" style="margin-bottom: 20px;" @bind="question.Text" placeholder="Question text" />
         <br />
 
         <!-- Depending on what the question type is render the question differently-->
@@ -37,18 +43,20 @@
                 @for (int i = 0; i < scq.AnswerOptions.Count; i++)
                 {
                     var index = i;
-                    <input @bind="scq.AnswerOptions[index].OptionText"
+                    <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="scq.AnswerOptions[index].OptionText"
                     placeholder=@($"Option {index + 1}") />
                 }
                 <br />
-                <button @onclick="() => AddOption(scq)">+</button>
-                <button @onclick="() => RemoveOption(scq)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
+                <div>
+                    <button class="btn btn-success" @onclick="() => AddOption(scq)">+</button>
+                    <button class="btn btn-danger" @onclick="() => RemoveOption(scq)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
+                </div>
                 <br />
                 <label>Correct Answer:</label>
-                <select @onchange="(e) => scq.CorrectAnswer = e.Value.ToString()">
+                <select style="font-family:'Comic Sans MS';" @onchange="(e) => scq.CorrectAnswer = e.Value.ToString()">
                     @for (int i = 0; i < scq.AnswerOptions.Count; i++)
                     {
-                        <option value="@i">Option @(i + 1)</option>
+                        <option style="font-family:'Comic Sans MS';" value="@i">@scq.AnswerOptions[i].OptionText</option>
                     }
                 </select>
                 break;
@@ -57,12 +65,14 @@
                 @for (int i = 0; i < mcq.AnswerOptions.Count; i++)
                 {
                     var index = i;
-                    <input @bind="mcq.AnswerOptions[index].OptionText"
+                    <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="mcq.AnswerOptions[index].OptionText"
                     placeholder=@($"Option {index + 1}") />
                 }
                 <br />
-                <button @onclick="() => AddOption(mcq)">+</button>
-                <button @onclick="() => RemoveOption(mcq)" disabled="@(mcq.AnswerOptions.Count <= 2)">–</button>
+                <div>
+                    <button class="btn btn-success" @onclick="() => AddOption(mcq)">+</button>
+                    <button class="btn btn-danger" @onclick="() => RemoveOption(mcq)" disabled="@(mcq.AnswerOptions.Count <= 2)">–</button>
+                </div>
                 <br />
                 <label>Mark the correct options:</label>
                 @for (int i = 0; i < mcq.AnswerOptions.Count; i++)
@@ -70,7 +80,7 @@
                     <br />
                     var index = i;
                     <label>
-                        <input type="checkbox"
+                        <input class="form-check-input" type="checkbox"
                         checked="@mcq.CorrectAnswerIndices.Contains(index)"
                         @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(mcq, index, e)" />
                         @mcq.AnswerOptions[index].OptionText
@@ -79,9 +89,8 @@
                 break;
 
             case TrueFalseQuestion tfq:
-                <p>This is a True/False question. Options are fixed: True and False.</p>
                 <label>Correct Answer:</label>
-                <select @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
+                <select style="font-family:'Comic Sans MS';" @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
                     <option value="1">True</option>
                     <option value="0">False</option>
                 </select>
@@ -89,7 +98,7 @@
 
             case TextInputQuestion tiq:
                 <label>Correct Answers (semicolon separated):</label>
-                <input @bind="question.CorrectAnswer" placeholder="e.g., cat;feline" />
+                <input class="rounded-pill" @bind="question.CorrectAnswer" placeholder="e.g., cat;feline" />
                 break;
 
             case PairingQuestion pq:
@@ -100,13 +109,14 @@
                 {
                     var index = row;
                     <div style="display:flex; gap:8px; margin-bottom:4px;">
-                        <input @bind="pq.ColumnA[index]" placeholder=@($"A{index+1}") />
-                        <input @bind="pq.ColumnB[index]" placeholder=@($"B{index+1}") />
+                        <input class="rounded-pill" @bind="pq.ColumnA[index]" placeholder=@($"A{index+1}") />
+                        <input class="rounded-pill" @bind="pq.ColumnB[index]" placeholder=@($"B{index+1}") />
                     </div>
                 }
-                <button @onclick="() => AddPairRow(pq)">+ Row</button>
-                <button @onclick="() => RemovePairRow(pq)" disabled="@(pq.ColumnA.Count <= 2)">– Row</button>
-                <br />
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" @onclick="() => AddPairRow(pq)">+ Row</button>
+                    <button class="btn btn-danger" @onclick="() => RemovePairRow(pq)" disabled="@(pq.ColumnA.Count <= 2)">– Row</button>
+                </div>
                 <label class="mt-3">Set the correct match for each “A”:</label>
 
                 @for (int a = 0; a < aCount; a++)
@@ -127,28 +137,31 @@
                         </select>
                     </div>
                 }
-
                 break;
             default:
                 break;
         }
-        <br/>
-        <br/>
+        @if (question.Type != QuestionType.Pairing)
+        {
+            <br />
+        }
+        <br />
         <InputFile OnChange="e => OnImageSelected(question, e)" />
         @if (!string.IsNullOrEmpty(question.ImagePath))
         {
             <img src="@question.ImagePath" alt="Preview" style="max-width:200px;display:block;margin-top:.5em" />
         }
-        <button @onclick="() => RemoveQuestion(question)">Remove Question</button>
-        <button @onclick="() => CopyQuestion(question)">Copy Question</button>
+        <br />
+        <div style="margin-top: 20px;">
+            <button class="btn btn-warning" @onclick="() => CopyQuestion(question)">Copy Question</button>
+            <button class="btn btn-danger" @onclick="() => RemoveQuestion(question)">Remove Question</button>
+        </div>
         <hr />
     </div>
 }
 
-<button @onclick="AddQuestion">Add Question</button> <button @onclick="() => PasteQuestion()">Paste Question</button>
-<button @onclick="SaveQuiz">Save Quiz</button>
-<button @onclick="Cancel">Cancel</button>
-@* <button @onclick="Bello">Do the Bello!</button> *@
+<button class="btn btn-success" @onclick="SaveQuiz">Save Quiz</button>
+<button class="btn btn-danger" @onclick="Cancel">Cancel</button>
 
 @code {
     private string quizTitle = "";
