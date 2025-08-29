@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
 @inject IWebHostEnvironment Env
+@using Quizzard.Components.QuestionEditors
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 @using Microsoft.AspNetCore.Components
@@ -40,25 +41,7 @@
         @switch (question){
 
             case SingleChoiceQuestion scq:
-                @for (int i = 0; i < scq.AnswerOptions.Count; i++)
-                {
-                    var index = i;
-                    <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="scq.AnswerOptions[index].OptionText"
-                    placeholder=@($"Option {index + 1}") />
-                }
-                <br />
-                <div>
-                    <button class="btn btn-success" @onclick="() => AddOption(scq)">+</button>
-                    <button class="btn btn-danger" @onclick="() => RemoveOption(scq)" disabled="@(question.AnswerOptions.Count <= 2)">–</button>
-                </div>
-                <br />
-                <label>Correct Answer:</label>
-                <select style="font-family:'Comic Sans MS';" @onchange="(e) => scq.CorrectAnswer = e.Value.ToString()">
-                    @for (int i = 0; i < scq.AnswerOptions.Count; i++)
-                    {
-                        <option style="font-family:'Comic Sans MS';" value="@i">@scq.AnswerOptions[i].OptionText</option>
-                    }
-                </select>
+                <SingleChoiceQuestionEditor scq="@scq"></SingleChoiceQuestionEditor>
                 break;
 
             case MultipleChoiceQuestion mcq:

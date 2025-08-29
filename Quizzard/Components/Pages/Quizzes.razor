@@ -19,17 +19,17 @@ else
     <ul>
         @foreach (var quiz in quizzes)
         {
-            <li>
+            <li style="margin-bottom: 10px; font-family:'Comic Sans MS';">
                 @quiz.Title
-                <button @onclick="() => NavigateToQuiz(quiz.Id)">Start Quiz</button>
-                <button @onclick="() => NaviagteToStatistics(quiz.Id)">Stats</button>
+                <button class="btn btn-success" style="margin: 5px;" @onclick="() => NavigateToQuiz(quiz.Id)">Start Quiz</button>
+                <button class="btn btn-primary" @onclick="() => NaviagteToStatistics(quiz.Id)">Stats</button>
             </li>
         }
     </ul>
 }
 
 <!-- Navigation Button to Add a New Quiz -->
-<button @onclick="NavigateToCreateQuiz">Create New Quiz</button>
+<button class="btn btn-warning" @onclick="NavigateToCreateQuiz">Create New Quiz</button>
 
 @code {
     private List<Quiz> quizzes;

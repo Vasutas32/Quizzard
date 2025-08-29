@@ -1,0 +1,42 @@
+@using Quizzard.Models
+@using Quizzard.Models.Questions
+@using Microsoft.AspNetCore.Components
+
+@for (int i = 0; i < scq.AnswerOptions.Count; i++)
+{
+    var index = i;
+    <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="scq.AnswerOptions[index].OptionText"
+    placeholder=@($"Option {index + 1}") />
+}
+<br />
+<div>
+    <button class="btn btn-success" @onclick="() => AddOption()">+</button>
+    <button class="btn btn-danger" @onclick="() => RemoveOption()" disabled="@(scq.AnswerOptions.Count <= 2)">–</button>
+</div>
+<br />
+<label>Correct Answer:</label>
+<select style="font-family:'Comic Sans MS';" @onchange="(e) => scq.CorrectAnswer = e.Value.ToString()">
+    @for (int i = 0; i < scq.AnswerOptions.Count; i++)
+    {
+        <option style="font-family:'Comic Sans MS';" value="@i">@scq.AnswerOptions[i].OptionText</option>
+    }
+</select>
+
+@code {
+
+    [Parameter]
+    public Question scq { get; set; }
+
+    private void AddOption()
+    {
+        scq.AnswerOptions.Add(new AnswerOption { OptionText = "" });
+
+    }
+
+    private void RemoveOption()
+    {
+        scq.AnswerOptions.RemoveAt(scq.AnswerOptions.Count - 1);
+
+    }
+
+}

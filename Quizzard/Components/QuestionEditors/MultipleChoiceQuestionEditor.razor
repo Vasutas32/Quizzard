@@ -1,0 +1,59 @@
+﻿@using Quizzard.Models
+@using Quizzard.Models.Questions
+@using Microsoft.AspNetCore.Components
+
+@for (int i = 0; i < mcq.AnswerOptions.Count; i++)
+{
+    var index = i;
+    <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="mcq.AnswerOptions[index].OptionText"
+           placeholder=@($"Option {index + 1}") />
+}
+<br />
+<div>
+    <button class="btn btn-success" @onclick="() => AddOption()">+</button>
+    <button class="btn btn-danger" @onclick="() => RemoveOption()" disabled="@(mcq.AnswerOptions.Count <= 2)">–</button>
+</div>
+<br />
+<label>Mark the correct options:</label>
+@for (int i = 0; i < mcq.AnswerOptions.Count; i++)
+{
+    <br />
+    var index = i;
+    <label>
+        <input class="form-check-input" type="checkbox"
+               checked="@mcq.CorrectAnswerIndices.Contains(index)"
+               @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(mcq, index, e)" />
+        @mcq.AnswerOptions[index].OptionText
+    </label>
+}
+
+@code {
+
+    [Parameter]
+	public MultipleChoiceQuestion mcq { get; set; }
+
+	public void AddOption()
+	{
+        mcq.AnswerOptions.Add(new AnswerOption { OptionText = "" });
+    }
+
+    private void RemoveOption()
+    {
+        mcq.AnswerOptions.RemoveAt(mcq.AnswerOptions.Count - 1);
+
+    }
+
+    void OnCorrectOptionChange(MultipleChoiceQuestion mcq, int idx, ChangeEventArgs e)
+    {
+        var isChecked = e.Value?.ToString()?.ToLower() == "true";
+        if (isChecked)
+        {
+            if (!mcq.CorrectAnswerIndices.Contains(idx))
+                mcq.CorrectAnswerIndices.Add(idx);
+        }
+        else
+        {
+            mcq.CorrectAnswerIndices.Remove(idx);
+        }
+    }
+}
