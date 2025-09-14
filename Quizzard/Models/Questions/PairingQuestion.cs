@@ -42,6 +42,7 @@ namespace Quizzard.Models.Questions
         {
             var copy = (PairingQuestion)this.MemberwiseClone();
 
+            //Necessary or not?
             // Deep‑clone the AnswerOptions list itself:
             copy.AnswerOptions = this.AnswerOptions
                 .Select(opt => new AnswerOption
@@ -50,6 +51,8 @@ namespace Quizzard.Models.Questions
                     OptionText = opt.OptionText
                 })
                 .ToList();
+            copy.CorrectPairs = this.CorrectPairs
+                .ToDictionary(entry => entry.Key, entry => entry.Value);
             copy.ColumnA = new List<string>(this.ColumnA);
             copy.ColumnB = new List<string>(this.ColumnB);
 

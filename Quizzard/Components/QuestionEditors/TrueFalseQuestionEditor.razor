@@ -1,0 +1,17 @@
+@using Quizzard.Components.QuestionEditors
+@using Quizzard.Models
+@using Quizzard.Models.Questions
+@using Microsoft.AspNetCore.Components
+
+<label>Correct Answer:</label>
+<select style="font-family:'Comic Sans MS';" @onchange="(e) => tfq.CorrectAnswer = e.Value.ToString()">
+    <option value="1">True</option>
+    <option value="0">False</option>
+</select>
+
+@code {
+
+    [Parameter]
+	public TrueFalseQuestion tfq { get; set; }
+
+}

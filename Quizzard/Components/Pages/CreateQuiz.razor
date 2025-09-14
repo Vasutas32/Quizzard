@@ -24,12 +24,12 @@
             <option value="@type" style="font-family:'Comic Sans MS'">@type</option>
         }
     </select>
-<br />
-<div style="margin-top: 20px;">
-<button class="btn btn-primary btn-outline-primary" @onclick="AddQuestion">Add Question</button> <!--TESTING BUTTON FOR STYLE-->
-<button class="btn btn-warning" style="color:white" @onclick="() => PasteQuestion()">Paste Question</button>
-</div>
-@* <button @onclick="Bello">Do the Bello!</button> *@
+    <br />
+    <div style="margin-top: 20px;">
+        <button class="btn btn-primary btn-outline-primary" @onclick="AddQuestion">Add Question</button> <!--TESTING BUTTON FOR STYLE-->
+        <button class="btn btn-warning" style="color:white" @onclick="() => PasteQuestion()">Paste Question</button>
+    </div>
+    @* <button @onclick="Bello">Do the Bello!</button> *@
 </div>
 @foreach (var question in questions)
 {
@@ -45,20 +45,15 @@
                 break;
 
             case MultipleChoiceQuestion mcq:
-               <MultipleChoiceQuestionEditor mcq="@mcq"></MultipleChoiceQuestionEditor>
+                <MultipleChoiceQuestionEditor mcq="@mcq"></MultipleChoiceQuestionEditor>
                 break;
 
             case TrueFalseQuestion tfq:
-                <label>Correct Answer:</label>
-                <select style="font-family:'Comic Sans MS';" @onchange="(e) => question.CorrectAnswer = e.Value.ToString()">
-                    <option value="1">True</option>
-                    <option value="0">False</option>
-                </select>
+                <TrueFalseQuestionEditor tfq="@tfq"></TrueFalseQuestionEditor>
                 break;
 
             case TextInputQuestion tiq:
-                <label>Correct Answers (semicolon separated):</label>
-                <input class="rounded-pill" @bind="question.CorrectAnswer" placeholder="e.g., cat;feline" />
+               <TextInputQuestionEditor tiq="@tiq"></TextInputQuestionEditor>
                 break;
 
             case PairingQuestion pq:
@@ -91,7 +86,7 @@
                             <option value="-1">(choose…)</option>
                             @for (int beck = 0; beck < bCount; beck++)
                             {
-								var indexB = beck;
+                                var indexB = beck;
                                 <option value="@indexB">@pq.ColumnB[indexB]</option>
                             }
                         </select>
@@ -129,9 +124,12 @@
     private QuestionType selectedQuestionType = QuestionType.SingleChoice;
     private Question questionToCopy = null;
 
+    [Inject]
+    public IJSRuntime JSRuntime { get; set; }
+
     // [Inject] private IWebHostEnvironment Env { get; set; }
 
-	//Purely for deubgging purposes
+    //Purely for deubgging purposes
     private void Bello()
     {
         Console.WriteLine("I'm doing the bello!!");
@@ -292,6 +290,15 @@
             await QuizService.AddQuizAsync(newQuiz);
             Navigation.NavigateTo("/");
         }
+        else if(!(questions.Count > 0))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Please add at least 1 question to your quiz!");
+        }
+        else if (string.IsNullOrWhiteSpace(quizTitle))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Please give your quiz a title!");
+        }
+
     }
 
     private void Cancel()

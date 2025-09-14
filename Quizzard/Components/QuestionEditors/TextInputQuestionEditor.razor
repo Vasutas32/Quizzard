@@ -1,0 +1,10 @@
+﻿@using Quizzard.Models.Questions
+
+<label>Correct Answers (semicolon separated):</label>
+<input class="rounded-pill" @bind="tiq.CorrectAnswer" placeholder="e.g., cat;feline" />
+
+@code {
+
+	[Parameter]
+	public TextInputQuestion tiq { get; set; }
+}
