@@ -53,45 +53,11 @@
                 break;
 
             case TextInputQuestion tiq:
-               <TextInputQuestionEditor tiq="@tiq"></TextInputQuestionEditor>
+                <TextInputQuestionEditor tiq="@tiq"></TextInputQuestionEditor>
                 break;
 
             case PairingQuestion pq:
-                var aCount = pq.ColumnA.Count;
-                var bCount = pq.ColumnB.Count;
-                var pairs = pq.CorrectPairs;
-                @for (int row = 0; row < pq.ColumnA.Count; row++)
-                {
-                    var index = row;
-                    <div style="display:flex; gap:8px; margin-bottom:4px;">
-                        <input class="rounded-pill" @bind="pq.ColumnA[index]" placeholder=@($"A{index+1}") />
-                        <input class="rounded-pill" @bind="pq.ColumnB[index]" placeholder=@($"B{index+1}") />
-                    </div>
-                }
-                <div style="margin-top: 20px;">
-                    <button class="btn btn-success" @onclick="() => AddPairRow(pq)">+ Row</button>
-                    <button class="btn btn-danger" @onclick="() => RemovePairRow(pq)" disabled="@(pq.ColumnA.Count <= 2)">– Row</button>
-                </div>
-                <label class="mt-3">Set the correct match for each “A”:</label>
-
-                @for (int a = 0; a < aCount; a++)
-                {
-                    var index = a;
-                    var selectedB = pairs.TryGetValue(index, out var b) ? b : -1;
-                    <div class="d-flex align-items-center mb-2">
-                        <strong class="me-2">@pq.ColumnA[index] ↔</strong>
-                        <select class="form-select w-auto"
-                        value="@selectedB"
-                        @onchange="@(e => OnPairSelectionChanged(pq, index, int.Parse(e.Value?.ToString() ?? "-1")) )">
-                            <option value="-1">(choose…)</option>
-                            @for (int beck = 0; beck < bCount; beck++)
-                            {
-                                var indexB = beck;
-                                <option value="@indexB">@pq.ColumnB[indexB]</option>
-                            }
-                        </select>
-                    </div>
-                }
+                <PairingQuestionEditor pq="pq"></PairingQuestionEditor>
                 break;
             default:
                 break;
@@ -123,6 +89,8 @@
     private List<Question> questions = new();
     private QuestionType selectedQuestionType = QuestionType.SingleChoice;
     private Question questionToCopy = null;
+
+    private bool _submitted = false;
 
     [Inject]
     public IJSRuntime JSRuntime { get; set; }
