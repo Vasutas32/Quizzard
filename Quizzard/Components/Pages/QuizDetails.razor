@@ -4,6 +4,7 @@
 @inject Quizzard.Services.IQrCodeService QrCodeService
 @inject NavigationManager Navigation
 @using QRCoder
+@using Quizzard.Components.QuestionDetails
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 @using System.Drawing
@@ -40,16 +41,9 @@
 						<img src="@question.ImagePath" class="question-image" />
 					}
 				</div>
-				@if (question is SingleChoiceQuestion)
+				@if (question is SingleChoiceQuestion scq)
 				{
-					<InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
-						@for (int i = 0; i < question.AnswerOptions.Count; i++)
-						{
-							<label style="margin-right: 20px;">
-								<InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
-							</label>
-						}
-					</InputRadioGroup>
+					<SingleChoiceQuestionDetail question="@scq" userAnswer="@userAnswer"></SingleChoiceQuestionDetail>
 				}
 				else if (question is MultipleChoiceQuestion)
 				{

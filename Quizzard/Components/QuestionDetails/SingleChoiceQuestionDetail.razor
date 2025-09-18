@@ -1,0 +1,21 @@
+﻿@using Quizzard.Models
+@using Quizzard.Models.Questions
+
+
+<InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
+	@for (int i = 0; i < question.AnswerOptions.Count; i++)
+	{
+		<label style="margin-right: 20px;">
+			<InputRadio Value="@i.ToString()" /> @question.AnswerOptions[i].OptionText
+		</label>
+	}
+</InputRadioGroup>
+
+@code {
+
+	[Parameter]
+	public UserAnswer userAnswer { get; set; }
+	[Parameter]
+	public SingleChoiceQuestion question { get; set; }
+
+}

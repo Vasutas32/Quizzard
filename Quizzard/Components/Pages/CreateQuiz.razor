@@ -7,7 +7,19 @@
 @using Quizzard.Models.Questions
 @using Microsoft.AspNetCore.Components
 
+@if (_submitted)
+{
+    <div class="alert alert-success" role="alert">
+        <h3>Quiz saved successfully!</h3>
+        <button class="btn btn-primary" @onclick="() => Navigation.NavigateTo(navigationString)">Back</button>
+
+    </div>
+} else
+{
+        
+
 <h3>Create a New Quiz</h3>
+
 
 <!-- Quiz Title Input -->
 <input class="quiz-name-input" style="margin-bottom: 20px;" @bind="quizTitle" placeholder="Enter quiz title" />
@@ -83,6 +95,7 @@
 
 <button class="btn btn-success" @onclick="SaveQuiz">Save Quiz</button>
 <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+}
 
 @code {
     private string quizTitle = "";
@@ -91,6 +104,8 @@
     private Question questionToCopy = null;
 
     private bool _submitted = false;
+    private const string navigationString = @"\quizzes";
+
 
     [Inject]
     public IJSRuntime JSRuntime { get; set; }
@@ -166,25 +181,6 @@
         }
     }
 
-    void AddPairRow(PairingQuestion pq)
-    {
-        // add one more A and one more B
-        pq.ColumnA.Add("");
-        pq.ColumnB.Add("");
-        pq.SyncAnswerOptionsFromColumns();
-    }
-
-    void RemovePairRow(PairingQuestion pq)
-    {
-        // remove the last two
-        if (pq.ColumnA.Count > 2)
-        {
-            pq.ColumnA.RemoveAt(pq.ColumnA.Count - 1);
-            pq.ColumnB.RemoveAt(pq.ColumnB.Count - 1);
-        }
-        pq.SyncAnswerOptionsFromColumns();
-    }
-
 
     private void RemoveQuestion(Question question)
     {
@@ -204,41 +200,6 @@
         }
     }
 
-    private void AddOption(Question question)
-    {
-        // Only allow dynamic options for SingleChoice and MultipleChoice
-        if (question is SingleChoiceQuestion || question is MultipleChoiceQuestion)
-            question.AnswerOptions.Add(new AnswerOption { OptionText = "" });
-    }
-
-    private void RemoveOption(Question question)
-    {
-        if ((question is SingleChoiceQuestion || question is MultipleChoiceQuestion) && question.AnswerOptions.Count > 2)
-            question.AnswerOptions.RemoveAt(question.AnswerOptions.Count - 1);
-    }
-
-    void OnCorrectOptionChange(MultipleChoiceQuestion mcq, int idx, ChangeEventArgs e)
-    {
-        var isChecked = e.Value?.ToString()?.ToLower() == "true";
-        if (isChecked)
-        {
-            if (!mcq.CorrectAnswerIndices.Contains(idx))
-                mcq.CorrectAnswerIndices.Add(idx);
-        }
-        else
-        {
-            mcq.CorrectAnswerIndices.Remove(idx);
-        }
-    }
-
-    void OnPairSelectionChanged(PairingQuestion pq, int aIndex, int bIndex)
-    {
-        // assign or re‑assign the correct B for this A
-        pq.CorrectPairs[aIndex] = bIndex;
-    }
-
-
-
     private async Task SaveQuiz()
     {
         foreach (var mcq in questions.OfType<MultipleChoiceQuestion>())
@@ -256,7 +217,7 @@
         {
             var newQuiz = new Quiz { Title = quizTitle, Questions = questions };
             await QuizService.AddQuizAsync(newQuiz);
-            Navigation.NavigateTo("/");
+            // Navigation.NavigateTo("/"); //New button created to get back
         }
         else if(!(questions.Count > 0))
         {
@@ -266,6 +227,8 @@
         {
             await JSRuntime.InvokeVoidAsync("alert", "Please give your quiz a title!");
         }
+
+		_submitted = true;
 
     }
 
