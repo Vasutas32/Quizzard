@@ -38,6 +38,12 @@
 
     private void RemoveOption()
     {
+        //Remove the answer option from correct answer, if it was selected
+		if (mcq.CorrectAnswerIndices.Contains(mcq.AnswerOptions.Count - 1))
+		{
+			mcq.CorrectAnswerIndices.Remove(mcq.AnswerOptions.Count - 1);
+		}
+
         mcq.AnswerOptions.RemoveAt(mcq.AnswerOptions.Count - 1);
 
     }

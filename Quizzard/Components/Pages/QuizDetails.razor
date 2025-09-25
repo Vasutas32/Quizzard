@@ -43,76 +43,23 @@
 				</div>
 				@if (question is SingleChoiceQuestion scq)
 				{
-					<SingleChoiceQuestionDetail question="@scq" userAnswer="@userAnswer"></SingleChoiceQuestionDetail>
+					<SingleChoiceQuestionDetail scq="@scq" userAnswer="@userAnswer"></SingleChoiceQuestionDetail>
 				}
-				else if (question is MultipleChoiceQuestion)
+				else if (question is MultipleChoiceQuestion mcq)
 				{
-					<!-- Multiple choice: display checkboxes -->
-					@for (int i = 0; i < question.AnswerOptions.Count; i++)
-					{
-						var index = i;
-						<label style="margin-bottom: 10px;">
-							<input type="checkbox"
-								   checked="@IsChecked(question.Id, index)"
-								   @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, index, e)" />
-							@question.AnswerOptions[index].OptionText
-						</label>
-						<br />
-					}
+					<MultipleChoiceQuestionDetail question="@mcq" userAnswer="@userAnswer" userAnswers="@userAnswers"></MultipleChoiceQuestionDetail>
 				}
-				else if (question is TrueFalseQuestion)
+				else if (question is TrueFalseQuestion tfq)
 				{
-					<InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{question.Id}")>
-						<label>
-							<InputRadio Value="@(true ? "1" : "0")" /> True
-						</label>
-						<label>
-							<InputRadio style="margin-left: 20px;" Value="@(false ? "1" : "0")" /> False
-						</label>
-					</InputRadioGroup>
+					<TrueFalseQuestionDetail tfq="@tfq" userAnswer="@userAnswer"></TrueFalseQuestionDetail>
 				}
 				else if (question is TextInputQuestion)
 				{
-					<input class="rounded-pill" type="text" @bind="userAnswer.SelectedAnswer" placeholder="Type your answer..." />
+					<TextInputQuestionDetail userAnswer="@userAnswer"></TextInputQuestionDetail>
 				}
 				else if (question is PairingQuestion pq)
 				{
-					<div style="display:flex; gap:2rem;">
-						<!-- Column A -->
-						<div>
-							<h5>Column A</h5>
-							@for (int i = 0; i < pq.ColumnA.Count; i++)
-							{
-								var index = i;
-								var bg = pairs[question.Id].ContainsKey(index)
-								? ColorForPair(question.Id, index)
-								: "white";
-								<button class="btn" style="margin:0.2rem; background:@bg;"
-										@onclick="() => OnClickA(question.Id, index)">
-									@pq.ColumnA[index]
-								</button>
-							}
-						</div>
-						<!-- Column B -->
-						<div>
-							<h5>Column B</h5>
-							@for (int j = 0; j < pq.ColumnB.Count; j++)
-							{
-								var index = j;
-								var pairedA = pairs[question.Id]
-								.FirstOrDefault(kv => kv.Value == index).Key;
-								string bg = "white";
-								if (TryGetPairedA(question.Id, index, out var ai))
-								{
-									bg = ColorForPair(question.Id, ai);
-								}
-								<button class="btn" style="margin:0.2rem; background:@bg;"
-										@onclick="() => OnClickB(question.Id, index)">
-									@pq.ColumnB[index]
-								</button>
-							}
-						</div>
-					</div>
+					<PairingQuestionDetail question="@question" pq="@pq" pairs="@pairs" _pairColors="@_pairColors" selectedA="@selectedA" selectedB="@selectedB" userAnswers="@userAnswers"></PairingQuestionDetail>
 				}
 
 			</div>
@@ -192,133 +139,6 @@ else
 			selectedB[q.Id] = null;
 			pairs[q.Id] = new Dictionary<int, int>();
 		}
-	}
-
-	void OnClickA(int qid, int ai)
-	{
-		// toggle‐off if clicked twice
-		if (selectedA[qid] == ai)
-		{
-			selectedA[qid] = null;
-			return;
-		}
-		selectedA[qid] = ai;
-
-		// if B had already a selection, commit the pair
-		if (selectedB[qid].HasValue)
-		{
-			var bi = selectedB[qid].Value;
-
-			// remove any existing pairing that pointed to this bi:
-			if (TryGetPairedA(qid, bi, out var oldA))
-			{
-				pairs[qid].Remove(oldA);
-				_pairColors[qid].Remove(oldA);
-			}
-
-			// add the new pairing and assign it a fresh color
-			pairs[qid][ai] = bi;
-			EnsureHasColor(qid, ai);
-
-			// clear temporary selections
-			selectedA[qid] = selectedB[qid] = null;
-			UpdateUserAnswer(qid);
-		}
-	}
-
-	void OnClickB(int qid, int bi)
-	{
-		// toggle‐off if clicked twice
-		if (selectedB[qid] == bi)
-		{
-			selectedB[qid] = null;
-			return;
-		}
-		selectedB[qid] = bi;
-
-		// if A had already a selection, commit the pair
-		if (selectedA[qid].HasValue)
-		{
-			var ai = selectedA[qid].Value;
-
-			// remove any existing pairing that pointed to this bi:
-			if (TryGetPairedA(qid, bi, out var oldA))
-			{
-				pairs[qid].Remove(oldA);
-				_pairColors[qid].Remove(oldA);
-			}
-
-			// add the new pairing and assign it a fresh color
-			pairs[qid][ai] = bi;
-			EnsureHasColor(qid, ai);
-
-			// clear temporary selections
-			selectedA[qid] = selectedB[qid] = null;
-			UpdateUserAnswer(qid);
-		}
-	}
-
-
-
-	private void EnsureHasColor(int qid, int aIndex)
-	{
-		if (!_pairColors.TryGetValue(qid, out var map))
-			_pairColors[qid] = map = new Dictionary<int, string>();
-
-		if (!_nextPairColorIndex.TryGetValue(qid, out var next))
-			_nextPairColorIndex[qid] = next = 0;
-
-		if (!map.ContainsKey(aIndex))
-		{
-			// grab the slot, *then* increment
-			var slot = next;
-			_nextPairColorIndex[qid] = next + 1;
-
-			// pick the color
-			var color = slot < PairColors.Length
-						? PairColors[slot]
-						: $"hsl({slot * 60 % 360},70%,80%)";
-
-			map[aIndex] = color;
-		}
-	}
-
-
-	private bool TryGetPairedA(int qid, int bIndex, out int aIndex)
-	{
-		foreach (var kv in pairs[qid])
-		{
-			if (kv.Value == bIndex)
-			{
-				aIndex = kv.Key;
-				return true;
-			}
-		}
-		aIndex = -1;
-		return false;
-	}
-
-	string ColorForPair(int qid, int aIndex)
-	{
-		if (_pairColors.TryGetValue(qid, out var map) &&
-			map.TryGetValue(aIndex, out var col))
-			return col;
-		return "transparent";
-	}
-
-	void UpdateUserAnswer(int qid)
-	{
-		// flatten dictionary ai→bi into "ai bi; ai bi; ..." form, sorted by ai
-		var dict = pairs[qid];
-		var entries = dict.OrderBy(kv => kv.Key)
-								.Select(kv => $"{kv.Key}{kv.Value}");
-		userAnswers.First(a => a.QuestionId == qid)
-							.SelectedAnswer = string.Join(";", entries);
-	}
-
-	private bool IsChecked(int questionId, int optionIndex)
-	{
-		return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(optionIndex);
 	}
 
 	private void OnMultipleChoiceChange(int questionId, int optionIndex, ChangeEventArgs e)

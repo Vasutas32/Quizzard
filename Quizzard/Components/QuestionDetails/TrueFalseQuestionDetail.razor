@@ -1,0 +1,21 @@
+﻿@using Quizzard.Models
+@using Quizzard.Models.Questions
+
+
+<InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{tfq.Id}")>
+	<label>
+		<InputRadio Value="@(true ? "1" : "0")" /> True
+	</label>
+	<label>
+		<InputRadio style="margin-left: 20px;" Value="@(false ? "1" : "0")" /> False
+	</label>
+</InputRadioGroup>
+
+@code {
+
+	[Parameter]
+	public TrueFalseQuestion tfq { get; set; }
+
+	[Parameter]
+	public UserAnswer userAnswer { get; set; }
+}

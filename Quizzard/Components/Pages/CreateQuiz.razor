@@ -6,6 +6,7 @@
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 @using Microsoft.AspNetCore.Components
+@using Quizzard.Components.QuestionEditors
 
 @if (_submitted)
 {
@@ -53,23 +54,23 @@
         @switch (question){
 
             case SingleChoiceQuestion scq:
-                <SingleChoiceQuestionEditor scq="@scq"></SingleChoiceQuestionEditor>
+                <SingleChoiceQuestionEditor scq="@scq"/>
                 break;
 
             case MultipleChoiceQuestion mcq:
-                <MultipleChoiceQuestionEditor mcq="@mcq"></MultipleChoiceQuestionEditor>
+                <MultipleChoiceQuestionEditor mcq="@mcq"/>
                 break;
 
             case TrueFalseQuestion tfq:
-                <TrueFalseQuestionEditor tfq="@tfq"></TrueFalseQuestionEditor>
+                <TrueFalseQuestionEditor tfq="@tfq"/>
                 break;
 
             case TextInputQuestion tiq:
-                <TextInputQuestionEditor tiq="@tiq"></TextInputQuestionEditor>
+                <TextInputQuestionEditor tiq="@tiq"/>
                 break;
 
             case PairingQuestion pq:
-                <PairingQuestionEditor pq="pq"></PairingQuestionEditor>
+                <PairingQuestionEditor pq="pq"/>
                 break;
             default:
                 break;

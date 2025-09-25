@@ -1,0 +1,10 @@
+﻿@using Quizzard.Models
+@using Quizzard.Models.Questions
+
+<input class="rounded-pill" type="text" @bind="userAnswer.SelectedAnswer" placeholder="Type your answer..." />
+
+@code {
+
+	[Parameter]
+	public UserAnswer userAnswer { get; set; }
+}
