@@ -13,6 +13,7 @@ namespace Quizzard.Data
         public DbSet<AnswerOption> AnswerOptions { get; set; }
         public DbSet<UserQuizResult> UserQuizResults { get; set; }
         public DbSet<UserAnswer> UserAnswers { get; set; }
+        public DbSet<UserAccount> UserAccounts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,0 +1,84 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Quizzard.Data
+@using Quizzard.ViewModels
+@using System.Security.Claims
+@inject QuizDbContext DbContext
+@inject NavigationManager navigationManager
+
+
+
+<div class="row">
+	<div class="col-lg-4">
+
+		<h3>Login</h3>
+		@if (!string.IsNullOrEmpty(errorMessage))
+		{
+			<div class="alert alert-danger">@errorMessage</div>
+		}
+		<EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
+			<DataAnnotationsValidator />
+			<div class="mb-3">
+				@* <label for="username" class="form-label">Username</label> *@
+
+				<label>Username</label>
+				<InputText @bind-Value="Model.Username" class="form-control" placeholder="Username" />
+				<ValidationMessage For="() => Model.Username" />
+				<div class="mb-3">
+
+					<label>Password</label>
+					<InputText @bind-Value="Model.Password" class="form-control" placeholder="Password" type="password" />
+					<ValidationMessage For="()=> Model.Password" />
+				</div>
+				<div class="mb-3">
+					<button type="submit" class="btn btn-primary">Login</button>
+				</div>
+			</div>
+		</EditForm>
+	</div>
+</div>
+
+<!--For debugging purposes-->
+@* @if (HttpContext.User.Identity.Name != null)
+{
+	<a>@HttpContext.User.Identity.Name</a>
+}
+ *@
+
+
+
+
+@code {
+	[CascadingParameter]
+	public HttpContext? HttpContext { get; set; }
+
+
+	[SupplyParameterFromForm]
+	public LoginViewModel Model { get; set; } = new LoginViewModel();
+
+	private string? errorMessage;
+
+	public async Task Authenticate()
+	{
+		var userAccount = DbContext.UserAccounts.Where(u => u.Username == Model.Username).FirstOrDefault();
+		if (userAccount is null || userAccount.Password != Model.Password)
+		{
+			errorMessage = "Invalid username or password.";
+			return;
+		}
+
+		var claims = new List<Claim>
+		{
+			new Claim(ClaimTypes.Role, userAccount.Role),
+			new Claim(ClaimTypes.Name, Model.Username)
+		};
+
+		var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+		var principal = new ClaimsPrincipal(identity);
+
+		await HttpContext.SignInAsync(principal);
+		navigationManager.NavigateTo("/");
+	}
+
+}

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>Home</PageTitle>
 
@@ -28,3 +29,76 @@
  <p> After giving options for the answers you can select the correct answer(s) at "Correct option".</p>
 	<p>When you are done creating your quiz, press the "Save quiz" button to save it.</p>
 </div>
+
+
+@*  <h1>NEW VERSION</h1>
+
+ <div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center">
+    <div class="container-fluid py-5">
+        <h1 class="display-3 fw-bold text-primary">Welcome to Quizzard! 🧠</h1>
+        <p class="col-md-10 fs-4 mx-auto">
+            Create, share, and test your knowledge with powerful, custom-built quizzes.
+        </p>
+        
+        <a href="/quizzes" class="btn btn-primary btn-lg mt-3 me-3 shadow">
+            Browse Quizzes <span class="bi bi-arrow-right"></span>
+        </a>
+        
+        <AuthorizeView>
+            <Authorized>
+                <a href="/create-quiz" class="btn btn-outline-secondary btn-lg mt-3">
+                    Start Creating <span class="bi bi-plus-circle"></span>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</div>
+<h2>How It Works</h2>
+<div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
+
+    <div class="col">
+        <div class="card h-100 border-primary shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title text-primary"><span class="bi bi-search"></span> Viewing Quizzes</h3>
+                <p class="card-text">
+                    Click on the **"Quizzes"** link in the navigation menu to see what's available.
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <span class="bi bi-file-text-fill text-success me-2"></span> Fill out quizzes.
+                    </li>
+                    <li class="list-group-item">
+                        <span class="bi bi-graph-up text-info me-2"></span> View statistics by clicking the button next to the quiz's name.
+                    </li>
+                </ul>
+                <a href="/quizzes" class="btn btn-sm btn-outline-primary mt-3">Go to Quizzes</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card h-100 border-secondary shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title text-secondary"><span class="bi bi-pencil-square"></span> Creating Quizzes</h3>
+                <p class="card-text">
+                    Click on the **"Create Quiz"** link to start building your own knowledge challenge.
+                </p>
+                <p class="fw-bold">5 Powerful Question Types:</p>
+
+                <p>
+                    <span class="badge rounded-pill bg-success me-1">Single Choice</span>
+                    <span class="badge rounded-pill bg-success me-1">Multiple Choice</span>
+                    <span class="badge rounded-pill bg-success me-1">True/False</span>
+                    <span class="badge rounded-pill bg-success me-1">Text Input</span>
+                    <span class="badge rounded-pill bg-success">Pairing</span>
+                </p>
+
+                <p class="mt-3">
+                    Don't forget to **name your quiz** and press **"Save quiz"** when you're done setting options and correct answers!
+                </p>
+                <a href="/create-quiz" class="btn btn-sm btn-outline-secondary">Create Now</a>
+            </div>
+        </div>
+    </div>
+
+</div> *@
