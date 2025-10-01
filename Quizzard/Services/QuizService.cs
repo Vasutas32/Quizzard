@@ -38,6 +38,12 @@ namespace Quizzard.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task UpdateQuizAsync(Quiz quiz)
+        {
+            _context.Quizzes.Update(quiz);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task AddAnswerOptionsAsync(List<AnswerOption> options)
         {
             _context.AnswerOptions.AddRange(options);

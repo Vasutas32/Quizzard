@@ -1,4 +1,4 @@
-﻿@page "/create-quiz"
+﻿@page "/create-quiz/{QuizId:int?}"
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
 @inject IWebHostEnvironment Env
@@ -107,6 +107,12 @@
     private bool _submitted = false;
     private const string navigationString = @"\quizzes";
 
+    [Parameter]
+    public int? QuizId { get; set; }
+
+    //Store the quiz object if editing
+    private Quiz? originalQuiz = null;
+
 
     [Inject]
     public IJSRuntime JSRuntime { get; set; }
@@ -117,6 +123,19 @@
     private void Bello()
     {
         Console.WriteLine("I'm doing the bello!!");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (QuizId.HasValue)
+        {
+            originalQuiz = await QuizService.GetQuizByIdAsync(QuizId.Value);
+            if (originalQuiz != null)
+            {
+                quizTitle = originalQuiz.Title;
+                questions = originalQuiz.Questions;
+            }
+        }
     }
 
     private void AddQuestion()
@@ -216,18 +235,28 @@
         }
 
         //Purely for debugging purposes
-   //      foreach (var q in questions)
-   //      {
-			// foreach (var ao in q.AnswerOptions)
-			// {
+        //      foreach (var q in questions)
+        //      {
+        // foreach (var ao in q.AnswerOptions)
+        // {
 
-			// }
-   //      }
+        // }
+        //      }
 
         if (!string.IsNullOrWhiteSpace(quizTitle) && questions.Count > 0)
         {
-            var newQuiz = new Quiz { Title = quizTitle, Questions = questions };
-            await QuizService.AddQuizAsync(newQuiz);
+            if (originalQuiz != null) 
+            {
+				originalQuiz.Title = quizTitle;
+				originalQuiz.Questions = questions;
+
+                await QuizService.UpdateQuizAsync(originalQuiz);
+            } else 
+            {
+                var newQuiz = new Quiz { Title = quizTitle, Questions = questions };
+                await QuizService.AddQuizAsync(newQuiz);
+
+            }
 		    _submitted = true;
             // Navigation.NavigateTo("/"); //New button created to get back
         }
