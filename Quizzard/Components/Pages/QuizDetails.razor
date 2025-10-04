@@ -41,25 +41,31 @@
 						<img src="@question.ImagePath" class="question-image" />
 					}
 				</div>
-				@if (question is SingleChoiceQuestion scq)
+			
+				@switch (question)
 				{
-					<SingleChoiceQuestionDetail scq="@scq" userAnswer="@userAnswer"></SingleChoiceQuestionDetail>
-				}
-				else if (question is MultipleChoiceQuestion mcq)
-				{
-					<MultipleChoiceQuestionDetail question="@mcq" userAnswer="@userAnswer" userAnswers="@userAnswers"></MultipleChoiceQuestionDetail>
-				}
-				else if (question is TrueFalseQuestion tfq)
-				{
-					<TrueFalseQuestionDetail tfq="@tfq" userAnswer="@userAnswer"></TrueFalseQuestionDetail>
-				}
-				else if (question is TextInputQuestion)
-				{
-					<TextInputQuestionDetail userAnswer="@userAnswer"></TextInputQuestionDetail>
-				}
-				else if (question is PairingQuestion pq)
-				{
-					<PairingQuestionDetail question="@question" pq="@pq" pairs="@pairs" _pairColors="@_pairColors" selectedA="@selectedA" selectedB="@selectedB" userAnswers="@userAnswers"></PairingQuestionDetail>
+
+					case SingleChoiceQuestion scq:
+						<SingleChoiceQuestionDetail scq="@scq" userAnswer="@userAnswer"></SingleChoiceQuestionDetail>
+						break;
+
+					case MultipleChoiceQuestion mcq:
+						<MultipleChoiceQuestionDetail question="@mcq" userAnswer="@userAnswer" userAnswers="@userAnswers"></MultipleChoiceQuestionDetail>
+						break;
+
+					case TrueFalseQuestion tfq:
+						<TrueFalseQuestionDetail tfq="@tfq" userAnswer="@userAnswer"></TrueFalseQuestionDetail>
+						break;
+
+					case TextInputQuestion tiq:
+						<TextInputQuestionDetail userAnswer="@userAnswer"></TextInputQuestionDetail>
+						break;
+
+					case PairingQuestion pq:
+						<PairingQuestionDetail question="@question" pq="@pq" pairs="@pairs" _pairColors="@_pairColors" selectedA="@selectedA" selectedB="@selectedB" userAnswers="@userAnswers"></PairingQuestionDetail>
+						break;
+					default:
+						break;
 				}
 
 			</div>
@@ -78,6 +84,7 @@ else
 	private List<UserAnswer> userAnswers = new List<UserAnswer>();
 	private const string navigationString = @"\quizzes";
 
+	//Outer int for questionId, inner int for selected option indices
 	private Dictionary<int, int?> selectedA = new();
 	private Dictionary<int, int?> selectedB = new();
 	private Dictionary<int, Dictionary<int, int>> pairs = new();
@@ -102,7 +109,7 @@ else
 		var absoluteUri = Navigation.ToAbsoluteUri($"/quizzes/{quizId}").ToString();
 		QrDataUrl = await QrCodeService.GenerateQrCodeDataUrlAsync(absoluteUri);
 
-		// Sort answer options for each question if needed (e.g., by Id)
+		// Sort answer options for each question by ID
 		foreach (var question in quiz.Questions)
 		{
 			question.AnswerOptions = question.AnswerOptions.OrderBy(o => o.Id).ToList();
@@ -141,31 +148,6 @@ else
 		}
 	}
 
-	private void OnMultipleChoiceChange(int questionId, int optionIndex, ChangeEventArgs e)
-	{
-		var isChecked = e.Value?.ToString()?.ToLower() == "true";  // Adjust per browser behavior
-
-		var ua = userAnswers.FirstOrDefault(a => a.QuestionId == questionId);
-		if (ua != null)
-		{
-			if (!multipleChoiceSelections.ContainsKey(questionId))
-			{
-				multipleChoiceSelections[questionId] = new List<int>();
-			}
-			var selections = multipleChoiceSelections[questionId];
-			if (isChecked)
-			{
-				if (!selections.Contains(optionIndex))
-					selections.Add(optionIndex);
-			}
-			else
-			{
-				selections.Remove(optionIndex);
-			}
-			ua.SelectedAnswer = string.Join(";", selections.OrderBy(x => x));
-		}
-	}
-
 	private Dictionary<int, List<int>> multipleChoiceSelections = new Dictionary<int, List<int>>();
 
 	private async Task SubmitQuiz()
@@ -182,6 +164,5 @@ else
 		_total = userAnswers.Count;
 		_correct = userAnswers.Count(a => a.IsCorrect);
 		_submitted = true;
-		// Navigation.NavigateTo("/quizzes");
 	}
 }

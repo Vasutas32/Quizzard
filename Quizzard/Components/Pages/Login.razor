@@ -20,7 +20,6 @@
 		<EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
 			<DataAnnotationsValidator />
 			<div class="mb-3">
-				@* <label for="username" class="form-label">Username</label> *@
 
 				<label>Username</label>
 				<InputText @bind-Value="Model.Username" class="form-control" placeholder="Username" />
@@ -38,15 +37,6 @@
 		</EditForm>
 	</div>
 </div>
-
-<!--For debugging purposes-->
-@* @if (HttpContext.User.Identity.Name != null)
-{
-	<a>@HttpContext.User.Identity.Name</a>
-}
- *@
-
-
 
 
 @code {

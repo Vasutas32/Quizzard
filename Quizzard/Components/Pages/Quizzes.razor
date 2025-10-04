@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
 @using Quizzard.Models
 
 <h3>Quiz List</h3>
@@ -23,7 +24,9 @@ else
                 @quiz.Title
                 <button class="btn btn-success" style="margin: 5px;" @onclick="() => NavigateToQuiz(quiz.Id)">Start Quiz</button>
                 <button class="btn btn-primary" @onclick="() => NaviagteToStatistics(quiz.Id)">Stats</button>
-                <button class="btn btn-warning" @onclick="() => NavigateToEditQuiz(quiz.Id)">Edit</button>
+                <AuthorizeView Roles="Admin">
+                    <button class="btn btn-warning" @onclick="() => NavigateToEditQuiz(quiz.Id)">Edit</button>
+                </AuthorizeView>
             </li>
         }
     </ul>
