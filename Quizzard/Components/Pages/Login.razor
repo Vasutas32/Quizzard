@@ -1,11 +1,14 @@
 ﻿@page "/login"
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Quizzard.Data
+@using Quizzard.Models
 @using Quizzard.ViewModels
 @using System.Security.Claims
 @inject QuizDbContext DbContext
 @inject NavigationManager navigationManager
+@inject Quizzard.Services.QuizService QuizService
 
 
 
@@ -17,7 +20,7 @@
 		{
 			<div class="alert alert-danger">@errorMessage</div>
 		}
-		<EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
+		<EditForm Model="@Model" OnValidSubmit="HandleLoginOrRegister" FormName="LoginForm">
 			<DataAnnotationsValidator />
 			<div class="mb-3">
 
@@ -31,7 +34,8 @@
 					<ValidationMessage For="()=> Model.Password" />
 				</div>
 				<div class="mb-3">
-					<button type="submit" class="btn btn-primary">Login</button>
+					<button type="submit" @onclick="SetActionToLogin" class="btn btn-primary">Login</button>
+					<button type="submit" @onclick="SetActionToRegister" class="btn btn-secondary">Register</button>
 				</div>
 			</div>
 		</EditForm>
@@ -40,35 +44,41 @@
 
 
 @code {
-	[CascadingParameter]
-	public HttpContext? HttpContext { get; set; }
+	// [CascadingParameter]
+	// public HttpContext? HttpContext { get; set; }
 
 
 	[SupplyParameterFromForm]
 	public LoginViewModel Model { get; set; } = new LoginViewModel();
 
+	private string Action { get; set; } = "Login";
 	private string? errorMessage;
 
-	public async Task Authenticate()
+	private void SetActionToLogin() => Action = "Login";
+	private void SetActionToRegister() => Action = "RegisterUser";
+
+	private void HandleLoginOrRegister()
 	{
-		var userAccount = DbContext.UserAccounts.Where(u => u.Username == Model.Username).FirstOrDefault();
-		if (userAccount is null || userAccount.Password != Model.Password)
+		var endpoint = (Action == "Login") ? "/LoginProcessor" : "/RegisterUser";
+
+		// Construct the URL with encoded data
+		var encodedUsername = Uri.EscapeDataString(Model.Username);
+		var encodedPassword = Uri.EscapeDataString(Model.Password);
+		var redirectUrl = $"{endpoint}?username={encodedUsername}&password={encodedPassword}";
+
+		// Force the browser to leave Blazor and hit the ASP.NET Core pipeline
+		navigationManager.NavigateTo(redirectUrl, forceLoad: true);
+	}
+
+	private bool IsModelValid()
+	{
+		if (string.IsNullOrWhiteSpace(Model.Username) || string.IsNullOrWhiteSpace(Model.Password))
 		{
-			errorMessage = "Invalid username or password.";
-			return;
+			errorMessage = "Username and Password are required.";
+			return false;
 		}
-
-		var claims = new List<Claim>
-		{
-			new Claim(ClaimTypes.Role, userAccount.Role),
-			new Claim(ClaimTypes.Name, Model.Username)
-		};
-
-		var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-		var principal = new ClaimsPrincipal(identity);
-
-		await HttpContext.SignInAsync(principal);
-		navigationManager.NavigateTo("/");
+		errorMessage = null;
+		return true;
 	}
 
 }

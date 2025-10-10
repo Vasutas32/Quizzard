@@ -154,5 +154,11 @@ namespace Quizzard.Services
 
             return stats;
         }
+
+        public async Task RegisterUserAsync(UserAccount user)
+        {
+            _context.UserAccounts.Add(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }

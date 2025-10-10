@@ -41,7 +41,7 @@
 						<img src="@question.ImagePath" class="question-image" />
 					}
 				</div>
-			
+
 				@switch (question)
 				{
 
@@ -71,6 +71,7 @@
 			</div>
 		}
 		<button class="btn btn-success" style="margin-top: 30px; margin-bottom: 20px;" @onclick="SubmitQuiz">Submit Quiz</button>
+		<button class="btn btn-close" @onclick="Bello">Bello</button>
 	}
 }
 else
@@ -101,6 +102,11 @@ else
 	private bool _submitted;
 	private int _correct, _total;
 
+	private void Bello()
+	{
+		Console.WriteLine("I'm doing the bello!!");
+	}
+
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -109,11 +115,24 @@ else
 		var absoluteUri = Navigation.ToAbsoluteUri($"/quizzes/{quizId}").ToString();
 		QrDataUrl = await QrCodeService.GenerateQrCodeDataUrlAsync(absoluteUri);
 
+		Random rand = new Random();
+
 		// Sort answer options for each question by ID
 		foreach (var question in quiz.Questions)
 		{
-			question.AnswerOptions = question.AnswerOptions.OrderBy(o => o.Id).ToList();
+			//Order if needed
+			//Todo: introduce order property to answer options
+			// question.AnswerOptions = question.AnswerOptions.OrderBy(o => o.Id).ToList();
+
+			//Fisher-Yates algorithm for shuffling answer options
+			//Todo: extract to general utility method
+			for (int i = question.AnswerOptions.Count - 1; i > 0; i--)
+			{
+				int j = rand.Next(i + 1);
+				(question.AnswerOptions[i], question.AnswerOptions[j]) = (question.AnswerOptions[j], question.AnswerOptions[i]);
+			}
 		}
+	
 
 		foreach (var pq in quiz.Questions.OfType<PairingQuestion>())
 		{

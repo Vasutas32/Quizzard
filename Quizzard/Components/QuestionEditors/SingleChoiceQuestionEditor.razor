@@ -15,10 +15,10 @@
 <br />
 <label>Correct Answer:</label>
 <select style="font-family:'Comic Sans MS';" @onchange="(e) => scq.CorrectAnswer = e.Value.ToString()">
-    @for (int i = 0; i < scq.AnswerOptions.Count; i++)
-    {
-        <option style="font-family:'Comic Sans MS';" value="@i">@scq.AnswerOptions[i].OptionText</option>
-    }
+	@foreach (var option in scq.AnswerOptions)
+	{
+        <option style="font-family:'Comic Sans MS';" value="@option.ClientId">@option.OptionText</option>
+	}
 </select>
 
 @code {
@@ -28,7 +28,7 @@
 
     private void AddOption()
     {
-        scq.AnswerOptions.Add(new AnswerOption { OptionText = "" });
+        scq.AnswerOptions.Add(new AnswerOption { OptionText = "", ClientId = Guid.NewGuid() });
 
     }
 

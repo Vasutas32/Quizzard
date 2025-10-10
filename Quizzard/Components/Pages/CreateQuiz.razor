@@ -147,14 +147,16 @@ else
 		switch (selectedQuestionType)
 		{
 			case QuestionType.SingleChoice:
-				var newSingleChoiceQuestion = new SingleChoiceQuestion
-					{
-						AnswerOptions = new List<AnswerOption>
+
+				var options = new List<AnswerOption>
 				{
 					new AnswerOption { OptionText = "" },
 					new AnswerOption { OptionText = "" }
-				},
-						CorrectAnswer = "0"
+				};
+				var newSingleChoiceQuestion = new SingleChoiceQuestion
+					{
+						AnswerOptions = options,
+						CorrectAnswer = options.First().ClientId.ToString()
 					};
 				questions.Add(newSingleChoiceQuestion);
 				break;
@@ -230,7 +232,7 @@ else
 		foreach (var mcq in questions.OfType<MultipleChoiceQuestion>())
 		{
 			// turn [0,2,3] into "0;2;3"
-			mcq.CorrectAnswer = string.Join(";", mcq.CorrectAnswerIndices.OrderBy(x => x));
+			mcq.CorrectAnswer = string.Join(";", mcq.CorrectAnswerOptions.OrderBy(x => x));
 		}
 
 		foreach (var pq in questions.OfType<PairingQuestion>())

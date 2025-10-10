@@ -3,10 +3,10 @@
 
 
 <InputRadioGroup @bind-Value="userAnswer.SelectedAnswer" Name=@($"question-{scq.Id}")>
-	@for (int i = 0; i < scq.AnswerOptions.Count; i++)
+	@foreach (var options in scq.AnswerOptions)
 	{
 		<label style="margin-right: 20px;">
-			<InputRadio Value="@i.ToString()" /> @scq.AnswerOptions[i].OptionText
+			<InputRadio Value="@options.ClientId.ToString()" /> @options.OptionText
 		</label>
 	}
 </InputRadioGroup>

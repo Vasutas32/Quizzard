@@ -5,7 +5,7 @@ namespace Quizzard.Models.Questions
     public class MultipleChoiceQuestion : Question
     {
         [NotMapped]
-        public List<int> CorrectAnswerIndices { get; set; } = new List<int>();
+        public List<string> CorrectAnswerOptions { get; set; } = new List<string>();
 
         public MultipleChoiceQuestion()
         {
@@ -46,7 +46,17 @@ namespace Quizzard.Models.Questions
                 })
                 .ToList();
 
-            copy.CorrectAnswerIndices = new List<int>(this.CorrectAnswerIndices);
+            var newAnswerOptions = new List<string>();
+            for(int i = 0; i < this.AnswerOptions.Count; i++)
+            {
+                var option = this.AnswerOptions[i];
+                if (this.CorrectAnswerOptions.Contains(option.ClientId.ToString()))
+                {
+                    newAnswerOptions.Add(copy.AnswerOptions[i].ClientId.ToString());
+                }
+            }
+
+            copy.CorrectAnswerOptions = new List<string>(newAnswerOptions);
 
             return copy;
         }

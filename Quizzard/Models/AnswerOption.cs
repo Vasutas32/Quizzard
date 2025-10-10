@@ -7,6 +7,9 @@ namespace Quizzard.Models
         // Primary key for the AnswerOption record.
         public int Id { get; set; }
 
+        // Use a GUID for a stable, unique client-side identifier
+        public Guid ClientId { get; set; } = Guid.NewGuid();
+
         // Foreign key linking this answer option to its parent question.
         public int QuestionId { get; set; }
 

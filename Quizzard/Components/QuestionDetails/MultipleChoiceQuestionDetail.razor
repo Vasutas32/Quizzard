@@ -1,14 +1,13 @@
 ﻿@using Quizzard.Models
 @using Quizzard.Models.Questions
 
-@for (int i = 0; i < question.AnswerOptions.Count; i++)
+@foreach (var option in question.AnswerOptions)
 {
-	var index = i;
 	<label style="margin-bottom: 10px;">
 		<input type="checkbox"
-		checked="@IsChecked(question.Id, index)"
-		@onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, index, e)" />
-		@question.AnswerOptions[index].OptionText
+			   checked="@IsChecked(question.Id, option)"
+			   @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, option, e)" />
+		@option.OptionText
 	</label>
 	<br />
 }
@@ -25,34 +24,33 @@
 	public List<UserAnswer> userAnswers { get; set; }
 
 
-	private Dictionary<int, List<int>> multipleChoiceSelections = new Dictionary<int, List<int>>();
+	private Dictionary<int, List<string>> multipleChoiceSelections = new Dictionary<int, List<string>>();
 
-
-	private bool IsChecked(int questionId, int optionIndex)
+	private bool IsChecked(int questionId, AnswerOption option)
 	{
-		return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(optionIndex);
+		return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(option.ClientId.ToString());
 	}
 
-	private void OnMultipleChoiceChange(int questionId, int optionIndex, ChangeEventArgs e)
+	private void OnMultipleChoiceChange(int questionId, AnswerOption option, ChangeEventArgs e)
 	{
-		var isChecked = e.Value?.ToString()?.ToLower() == "true";  
+		var isChecked = e.Value?.ToString()?.ToLower() == "true";
 
 		var ua = userAnswers.FirstOrDefault(a => a.QuestionId == questionId);
 		if (ua != null)
 		{
 			if (!multipleChoiceSelections.ContainsKey(questionId))
 			{
-				multipleChoiceSelections[questionId] = new List<int>();
+				multipleChoiceSelections[questionId] = new List<string>();
 			}
 			var selections = multipleChoiceSelections[questionId];
 			if (isChecked)
 			{
-				if (!selections.Contains(optionIndex))
-					selections.Add(optionIndex);
+				if (!selections.Contains(option.ClientId.ToString()))
+					selections.Add(option.ClientId.ToString());
 			}
 			else
 			{
-				selections.Remove(optionIndex);
+				selections.Remove(option.ClientId.ToString());
 			}
 			ua.SelectedAnswer = string.Join(";", selections.OrderBy(x => x));
 		}

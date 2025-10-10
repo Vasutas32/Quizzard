@@ -5,7 +5,7 @@
 {
     var index = i;
     <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="mcq.AnswerOptions[index].OptionText"
-           placeholder=@($"Option {index + 1}") />
+    placeholder=@($"Option {index + 1}") />
 }
 <br />
 <div>
@@ -14,16 +14,15 @@
 </div>
 <br />
 <label>Mark the correct options:</label>
-@for (int i = 0; i < mcq.AnswerOptions.Count; i++)
+@foreach (var option in mcq.AnswerOptions)
 {
-    <br />
-    var index = i;
-    <label>
-        <input class="form-check-input" type="checkbox"
-               checked="@mcq.CorrectAnswerIndices.Contains(index)"
-               @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(mcq, index, e)" />
-        @mcq.AnswerOptions[index].OptionText
-    </label>
+<br />
+<label>
+    <input class="form-check-input" type="checkbox"
+    checked="@mcq.CorrectAnswerOptions.Contains(option.ClientId.ToString())"
+    @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(option, e)"/>
+    @option.OptionText
+</label>
 }
 
 @code {
@@ -39,26 +38,26 @@
     private void RemoveOption()
     {
         //Remove the answer option from correct answer, if it was selected
-		if (mcq.CorrectAnswerIndices.Contains(mcq.AnswerOptions.Count - 1))
+		if (mcq.CorrectAnswerOptions.Contains(mcq.AnswerOptions.Last().ClientId.ToString()))
 		{
-			mcq.CorrectAnswerIndices.Remove(mcq.AnswerOptions.Count - 1);
+            mcq.CorrectAnswerOptions.Remove(mcq.AnswerOptions.Last().ClientId.ToString());
 		}
 
         mcq.AnswerOptions.RemoveAt(mcq.AnswerOptions.Count - 1);
 
     }
 
-    void OnCorrectOptionChange(MultipleChoiceQuestion mcq, int idx, ChangeEventArgs e)
+    void OnCorrectOptionChange(AnswerOption option, ChangeEventArgs e)
     {
         var isChecked = e.Value?.ToString()?.ToLower() == "true";
         if (isChecked)
         {
-            if (!mcq.CorrectAnswerIndices.Contains(idx))
-                mcq.CorrectAnswerIndices.Add(idx);
+            if (!mcq.CorrectAnswerOptions.Contains(option.ClientId.ToString()))
+                mcq.CorrectAnswerOptions.Add(option.ClientId.ToString());
         }
         else
         {
-            mcq.CorrectAnswerIndices.Remove(idx);
+            mcq.CorrectAnswerOptions.Remove(option.ClientId.ToString());
         }
     }
 }

@@ -39,6 +39,8 @@
                 })
                 .ToList();
 
+            copy.CorrectAnswer = copy.AnswerOptions.First().ClientId.ToString();
+
             return copy;
         }
     }
