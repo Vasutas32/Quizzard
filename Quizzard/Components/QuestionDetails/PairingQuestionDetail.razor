@@ -8,11 +8,11 @@
 		@for (int i = 0; i < pq.ColumnA.Count; i++)
 		{
 			var index = i;
-			var bg = pairs[question.Id].ContainsKey(index)
-			? ColorForPair(question.Id, index)
+			var bg = pairs[question.Id].ContainsKey(pq.AnswerOptions[index].ClientId.ToString())
+			? ColorForPair(question.Id, pq.AnswerOptions[index].ClientId.ToString())
 			: "white";
 			<button class="btn" style="margin:0.2rem; background:@bg;"
-			@onclick="() => OnClickA(question.Id, index)">
+					@onclick="() => OnClickA(question.Id, pq.AnswerOptions[index].ClientId.ToString())">
 				@pq.ColumnA[index]
 			</button>
 		}
@@ -24,14 +24,14 @@
 		{
 			var index = j;
 			var pairedA = pairs[question.Id]
-			.FirstOrDefault(kv => kv.Value == index).Key;
+			.FirstOrDefault(kv => kv.Value == pq.AnswerOptions[index + pq.ColumnA.Count].ClientId.ToString()).Key;
 			string bg = "white";
-			if (TryGetPairedA(question.Id, index, out var ai))
+			if (TryGetPairedA(question.Id, pq.AnswerOptions[index + pq.ColumnA.Count].ClientId.ToString(), out var aClientId))
 			{
-				bg = ColorForPair(question.Id, ai);
+				bg = ColorForPair(question.Id, aClientId);
 			}
 			<button class="btn" style="margin:0.2rem; background:@bg;"
-			@onclick="() => OnClickB(question.Id, index)">
+					@onclick="() => OnClickB(question.Id, pq.AnswerOptions[index + pq.ColumnA.Count].ClientId.ToString())">
 				@pq.ColumnB[index]
 			</button>
 		}
@@ -50,11 +50,11 @@
 
 
 	[Parameter]
-	public Dictionary<int, Dictionary<int, int>> pairs { get; set; }
+	public Dictionary<int, Dictionary<string, string>> pairs { get; set; }
 	[Parameter]
-	public Dictionary<int, int?> selectedA { get; set; } 
+	public Dictionary<int, string?> selectedA { get; set; }
 	[Parameter]
-	public Dictionary<int, int?> selectedB { get; set; }
+	public Dictionary<int, string?> selectedB { get; set; }
 
 	private static readonly string[] PairColors = new[]
 		{
@@ -62,36 +62,36 @@
   };
 
 	[Parameter]
-	public Dictionary<int, Dictionary<int, string>> _pairColors { get; set; }
+	public Dictionary<int, Dictionary<string, string>> _pairColors { get; set; }
 
 	private Dictionary<int, int> _nextPairColorIndex = new();
 
 
-	void OnClickA(int qid, int ai)
+	void OnClickA(int qid, string aClientId)
 	{
 		// toggle‐off if clicked twice
-		if (selectedA[qid] == ai)
+		if (selectedA[qid] == aClientId)
 		{
 			selectedA[qid] = null;
 			return;
 		}
-		selectedA[qid] = ai;
+		selectedA[qid] = aClientId;
 
 		// if B had already a selection, commit the pair
-		if (selectedB[qid].HasValue)
+		if (selectedB[qid] != null)
 		{
-			var bi = selectedB[qid].Value;
+			var bClientId = selectedB[qid];
 
 			// remove any existing pairing that pointed to this bi:
-			if (TryGetPairedA(qid, bi, out var oldA))
+			if (TryGetPairedA(qid, bClientId, out var oldAClientId))
 			{
-				pairs[qid].Remove(oldA);
-				_pairColors[qid].Remove(oldA);
+				pairs[qid].Remove(oldAClientId);
+				_pairColors[qid].Remove(oldAClientId);
 			}
 
 			// add the new pairing and assign it a fresh color
-			pairs[qid][ai] = bi;
-			EnsureHasColor(qid, ai);
+			pairs[qid][aClientId] = bClientId;
+			EnsureHasColor(qid, aClientId);
 
 			// clear temporary selections
 			selectedA[qid] = selectedB[qid] = null;
@@ -99,31 +99,31 @@
 		}
 	}
 
-	void OnClickB(int qid, int bi)
+	void OnClickB(int qid, string bClientId)
 	{
 		// toggle‐off if clicked twice
-		if (selectedB[qid] == bi)
+		if (selectedB[qid] == bClientId)
 		{
 			selectedB[qid] = null;
 			return;
 		}
-		selectedB[qid] = bi;
+		selectedB[qid] = bClientId;
 
 		// if A had already a selection, commit the pair
-		if (selectedA[qid].HasValue)
+		if (selectedA[qid] != null)
 		{
-			var ai = selectedA[qid].Value;
+			var aClientId = selectedA[qid];
 
 			// remove any existing pairing that pointed to this bi:
-			if (TryGetPairedA(qid, bi, out var oldA))
+			if (TryGetPairedA(qid, bClientId, out var oldAClientId))
 			{
-				pairs[qid].Remove(oldA);
-				_pairColors[qid].Remove(oldA);
+				pairs[qid].Remove(oldAClientId);
+				_pairColors[qid].Remove(oldAClientId);
 			}
 
 			// add the new pairing and assign it a fresh color
-			pairs[qid][ai] = bi;
-			EnsureHasColor(qid, ai);
+			pairs[qid][aClientId] = bClientId;
+			EnsureHasColor(qid, aClientId);
 
 			// clear temporary selections
 			selectedA[qid] = selectedB[qid] = null;
@@ -133,15 +133,15 @@
 
 
 
-	private void EnsureHasColor(int qid, int aIndex)
+	private void EnsureHasColor(int qid, string aClientId)
 	{
 		if (!_pairColors.TryGetValue(qid, out var map))
-			_pairColors[qid] = map = new Dictionary<int, string>();
+			_pairColors[qid] = map = new Dictionary<string, string>();
 
 		if (!_nextPairColorIndex.TryGetValue(qid, out var next))
 			_nextPairColorIndex[qid] = next = 0;
 
-		if (!map.ContainsKey(aIndex))
+		if (!map.ContainsKey(aClientId))
 		{
 			// grab the slot, *then* increment
 			var slot = next;
@@ -152,30 +152,30 @@
 						? PairColors[slot]
 						: $"hsl({slot * 60 % 360},70%,80%)";
 
-			map[aIndex] = color;
+			map[aClientId] = color;
 		}
 	}
 
 
-	private bool TryGetPairedA(int qid, int bIndex, out int aIndex)
+	private bool TryGetPairedA(int qid, string bClientId, out string aClientId)
 	{
 		foreach (var kv in pairs[qid])
 		{
-			if (kv.Value == bIndex)
+			if (kv.Value == bClientId)
 			{
-				aIndex = kv.Key;
+				aClientId = kv.Key;
 				return true;
 			}
 		}
-		aIndex = -1;
+		aClientId = "";
 		return false;
 	}
 
-	string ColorForPair(int qid, int aIndex)
+	string ColorForPair(int qid, string aClientId)
 	{
 		if (_pairColors.TryGetValue(qid, out var map) &&
-			map.TryGetValue(aIndex, out var col))
-			return col;
+			map.TryGetValue(aClientId, out var bClientId))
+			return bClientId;
 		return "transparent";
 	}
 
@@ -184,7 +184,8 @@
 		// flatten dictionary ai→bi into "ai bi; ai bi; ..." form, sorted by ai
 		var dict = pairs[qid];
 		var entries = dict.OrderBy(kv => kv.Key)
-								.Select(kv => $"{kv.Key}{kv.Value}");
+								.Select(kv => $"{kv.Key}:{kv.Value}");
+
 		userAnswers.First(a => a.QuestionId == qid)
 							.SelectedAnswer = string.Join(";", entries);
 	}

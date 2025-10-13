@@ -86,16 +86,16 @@ else
 	private const string navigationString = @"\quizzes";
 
 	//Outer int for questionId, inner int for selected option indices
-	private Dictionary<int, int?> selectedA = new();
-	private Dictionary<int, int?> selectedB = new();
-	private Dictionary<int, Dictionary<int, int>> pairs = new();
+	private Dictionary<int, string?> selectedA = new();
+	private Dictionary<int, string?> selectedB = new();
+	private Dictionary<int, Dictionary<string, string>> pairs = new();
 
 	private static readonly string[] PairColors = new[]
 		{
 	"#FF0000", "#BAE1FF", "#B4DA55", "#FFFFBA", "#E2BAFF", "#FFDAC1"
   };
-	private Dictionary<int, Dictionary<int, string>> _pairColors
-			= new Dictionary<int, Dictionary<int, string>>();
+	private Dictionary<int, Dictionary<string, string>> _pairColors
+			= new Dictionary<int, Dictionary<string, string>>();
 	private Dictionary<int, int> _nextPairColorIndex = new();
 
 	private string QrDataUrl;
@@ -125,14 +125,32 @@ else
 			// question.AnswerOptions = question.AnswerOptions.OrderBy(o => o.Id).ToList();
 
 			//Fisher-Yates algorithm for shuffling answer options
-			//Todo: extract to general utility method
-			for (int i = question.AnswerOptions.Count - 1; i > 0; i--)
+			//Todo: extract the algorithm to general utility method
+			//If pairing question, shuffle halves separately to keep A and B columns intact
+			if (question is PairingQuestion)
 			{
-				int j = rand.Next(i + 1);
-				(question.AnswerOptions[i], question.AnswerOptions[j]) = (question.AnswerOptions[j], question.AnswerOptions[i]);
+				question.AnswerOptions = question.AnswerOptions.OrderBy(o => o.Id).ToList();
+				for (int i = question.AnswerOptions.Count / 2 - 1; i > 0; i--)
+				{
+					int j = rand.Next(i + 1);
+					(question.AnswerOptions[i], question.AnswerOptions[j]) = (question.AnswerOptions[j], question.AnswerOptions[i]);
+				}
+				for (int i = question.AnswerOptions.Count - 1; i > question.AnswerOptions.Count / 2; i--)
+				{
+					int j = rand.Next(question.AnswerOptions.Count / 2, i + 1);
+					(question.AnswerOptions[i], question.AnswerOptions[j]) = (question.AnswerOptions[j], question.AnswerOptions[i]);
+				}
+			}
+			else
+			{
+				for (int i = question.AnswerOptions.Count - 1; i > 0; i--)
+				{
+					int j = rand.Next(i + 1);
+					(question.AnswerOptions[i], question.AnswerOptions[j]) = (question.AnswerOptions[j], question.AnswerOptions[i]);
+				}
 			}
 		}
-	
+
 
 		foreach (var pq in quiz.Questions.OfType<PairingQuestion>())
 		{
@@ -149,7 +167,7 @@ else
 
 			selectedA[pq.Id] = null;
 			selectedB[pq.Id] = null;
-			pairs[pq.Id] = new Dictionary<int, int>();
+			pairs[pq.Id] = new Dictionary<string, string>();
 		}
 
 		userAnswers = quiz.Questions.Select(q => new UserAnswer
@@ -163,7 +181,7 @@ else
 		{
 			selectedA[q.Id] = null;
 			selectedB[q.Id] = null;
-			pairs[q.Id] = new Dictionary<int, int>();
+			pairs[q.Id] = new Dictionary<string, string>();
 		}
 	}
 

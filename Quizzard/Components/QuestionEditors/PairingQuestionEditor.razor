@@ -3,9 +3,9 @@
 
 
 @{
-var aCount = pq.ColumnA.Count;
-var bCount = pq.ColumnB.Count;
-var pairs = pq.CorrectPairs;
+    var aCount = pq.ColumnA.Count;
+    var bCount = pq.ColumnB.Count;
+    var pairs = pq.CorrectPairs;
 }
 @for (int row = 0; row < pq.ColumnA.Count; row++)
 {
@@ -20,23 +20,23 @@ var pairs = pq.CorrectPairs;
     <button class="btn btn-danger" @onclick="() => RemovePairRow()" disabled="@(pq.ColumnA.Count <= 2)">– Row</button>
 </div>
 <label class="mt-3">Set the correct match for each “A”:</label>
-
-@for (int a = 0; a < aCount; a++)
+@for (int i = 0; i < aCount; i++)
 {
-    var index = a;
-    var selectedB = pairs.TryGetValue(index, out var b) ? b : -1;
+    var aIndex = i;
+    var a = pq.AnswerOptions[aIndex].ClientId.ToString();
+    var selectedB = pairs.TryGetValue(a, out var b) ? b : "";
     <div class="d-flex align-items-center mb-2">
-        <strong class="me-2">@pq.ColumnA[index] ↔</strong>
+        <strong class="me-2">@pq.ColumnA[aIndex] ↔</strong>
         <select class="form-select w-auto"
         value="@selectedB"
-        @onchange="@(e => OnPairSelectionChanged(index, int.Parse(e.Value?.ToString() ?? "-1")) )">
-            <option value="-1">(choose…)</option>
-            @for (int beck = 0; beck < bCount; beck++)
+        @onchange="@(e => OnPairSelectionChanged(a, e.Value?.ToString() ?? "") )">
+            <option value="">(choose…)</option>
+            @for (int j = 0; j < bCount; j++)
             {
-                var indexB = beck;
-                <option value="@indexB">@pq.ColumnB[indexB]</option>
+                var bIndex = j;
+                <option value="@pq.AnswerOptions[aCount + bIndex].ClientId.ToString()">@pq.ColumnB[bIndex]</option>
             }
-        </select>
+        </select>    
     </div>
 }
 
@@ -47,7 +47,7 @@ var pairs = pq.CorrectPairs;
 
     void AddPairRow()
     {
-        // add one more A and one more B
+        //Add one more option for column A and B
         pq.ColumnA.Add("");
         pq.ColumnB.Add("");
         pq.SyncAnswerOptionsFromColumns();
@@ -55,18 +55,43 @@ var pairs = pq.CorrectPairs;
 
     void RemovePairRow()
     {
-        // remove the last two
+        //Remove the last two pairs
         if (pq.ColumnA.Count > 2)
         {
-            pq.ColumnA.RemoveAt(pq.ColumnA.Count - 1);
+
+            // The list index for the A option being removed is the current ColumnA count - 1
+            var aIndexToRemove = pq.ColumnA.Count - 1;
+            var aClientIdToRemove = pq.AnswerOptions[aIndexToRemove].ClientId.ToString();
+
+            // The list index for the B option being removed is (A Count) + (B Count - 1)
+            var bIndexToRemoveInAnswerOptions = pq.ColumnA.Count + pq.ColumnB.Count - 1;
+            var bClientIdToRemove = pq.AnswerOptions[bIndexToRemoveInAnswerOptions].ClientId.ToString();
+
+            //Remove the actual text entries
+            pq.ColumnA.RemoveAt(aIndexToRemove);
             pq.ColumnB.RemoveAt(pq.ColumnB.Count - 1);
+
+            //Clean up the CorrectPairs dictionary using the ClientIds
+            //Remove the pairing where the removed A option was the Key (Column A item)
+            pq.CorrectPairs.Remove(aClientIdToRemove);
+
+            // Remove any pairing where the removed B option was the Value (Column B item)
+            var aKeyPairedWithRemovedB = pq.CorrectPairs
+                .FirstOrDefault(kv => kv.Value == bClientIdToRemove).Key;
+
+            if (!string.IsNullOrEmpty(aKeyPairedWithRemovedB))
+            {
+                pq.CorrectPairs.Remove(aKeyPairedWithRemovedB);
+            }
+
+            //Synchronize AnswerOptions. This rebuilds the list, keeping the remaining IDs stable.
+            pq.SyncAnswerOptionsFromColumns();
         }
-        pq.SyncAnswerOptionsFromColumns();
     }
 
-    void OnPairSelectionChanged(int aIndex, int bIndex)
+    void OnPairSelectionChanged(string aClientId, string bClientId)
     {
         // assign or re‑assign the correct B for this A
-        pq.CorrectPairs[aIndex] = bIndex;
+        pq.CorrectPairs[aClientId] = bClientId;
     }
 }
