@@ -2,7 +2,7 @@
 
 namespace Quizzard.Models.Questions
 {
-    public class PairingQuestion : Question
+    public class PairingQuestion : OptionsQuestion
     {
         [NotMapped]
         public List<string> ColumnA { get; set; } = new List<string>();
@@ -11,7 +11,7 @@ namespace Quizzard.Models.Questions
 
 
         [NotMapped]
-        public Dictionary<string, string> CorrectPairs { get; set; } = new();
+        public Dictionary<int, int> CorrectPairs { get; set; } = new();
 
         public PairingQuestion()
         {
@@ -35,6 +35,10 @@ namespace Quizzard.Models.Questions
 
             // 2. Build the new A list, reusing existing options
             var newAnswerOptions = new List<AnswerOption>();
+            for (int i = 0; i < newAnswerOptions.Count; i++)
+            {
+                newAnswerOptions[i].OrderIndex = i;
+            }
 
             // Synchronize Column A (A options are the first part of the list)
             for (int i = 0; i < ColumnA.Count; i++)
@@ -82,7 +86,7 @@ namespace Quizzard.Models.Questions
                     .Select(kv =>
                     {
                         // Format: "A_ID:B_ID"
-                        return $"{kv.Key}:{kv.Value}";
+                        return $"{kv.Key}:{kv.Value + this.ColumnA.Count}";
                     })
                     //Order the pairs alphabetically by the entire string (A_ID:B_ID) to ensure the order is deterministic for correct answer checking.
                     .OrderBy(s => s)
@@ -106,27 +110,31 @@ namespace Quizzard.Models.Questions
             copy.AnswerOptions = new List<AnswerOption>();
             foreach (var text in copy.ColumnA) copy.AnswerOptions.Add(new AnswerOption { OptionText = text });
             foreach (var text in copy.ColumnB) copy.AnswerOptions.Add(new AnswerOption { OptionText = text });
+            for (int i = 0; i < copy.AnswerOptions.Count; i++)
+            {
+                copy.AnswerOptions[i].OrderIndex = i;
+            }
 
             //Find the old A/B indices, then find the new A/B ClientIds at those indices.
-            copy.CorrectPairs = new Dictionary<string, string>();
-            int aCount = this.ColumnA.Count;
+            copy.CorrectPairs = new Dictionary<int, int>(this.CorrectPairs);
 
-            foreach (var kvp in this.CorrectPairs)
-            {
-                //Find the index of the old ClientId (kvp.Key) in the original AnswerOptions list
-                var oldAIndex = this.AnswerOptions.FindIndex(opt => opt.ClientId.ToString() == kvp.Key);
-                var oldBIndex = this.AnswerOptions.FindIndex(opt => opt.ClientId.ToString() == kvp.Value);
+            //Logic for when using GUID
+            //foreach (var kvp in this.CorrectPairs)
+            //{
+            //    //Find the index of the old ClientId (kvp.Key) in the original AnswerOptions list
+            //    var oldAIndex = this.AnswerOptions.FindIndex(opt => opt.OrderIndex == kvp.Key);
+            //    var oldBIndex = this.AnswerOptions.FindIndex(opt => opt.OrderIndex == kvp.Value);
 
-                //Get the new ClientIds from the same indices in the copy's AnswerOptions list
-                if (oldAIndex != -1 && oldBIndex != -1)
-                {
-                    var newAClientId = copy.AnswerOptions[oldAIndex].ClientId.ToString();
-                    var newBClientId = copy.AnswerOptions[oldBIndex].ClientId.ToString();
+            //    //Get the new ClientIds from the same indices in the copy's AnswerOptions list
+            //    if (oldAIndex != -1 && oldBIndex != -1)
+            //    {
+            //        var newAClientId = copy.AnswerOptions[oldAIndex].OrderIndex;
+            //        var newBClientId = copy.AnswerOptions[oldBIndex].OrderIndex;
 
-                    //Add the new mapped pair
-                    copy.CorrectPairs[newAClientId] = newBClientId;
-                }
-            }
+            //        //Add the new mapped pair
+            //        copy.CorrectPairs[newAClientId] = newBClientId;
+            //    }
+            //}
 
             //Update the final CorrectAnswer string using the newly mapped IDs.
             copy.SyncCorrectAnswerFromPairs();

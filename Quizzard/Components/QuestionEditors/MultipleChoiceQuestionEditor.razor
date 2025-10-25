@@ -3,61 +3,62 @@
 
 @for (int i = 0; i < mcq.AnswerOptions.Count; i++)
 {
-    var index = i;
-    <input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="mcq.AnswerOptions[index].OptionText"
-    placeholder=@($"Option {index + 1}") />
+	var index = i;
+	<input class="rounded-pill" style="margin-right: 20px; margin-bottom: 10px;" @bind="mcq.AnswerOptions[index].OptionText"
+		   placeholder=@($"Option {index + 1}") />
 }
 <br />
 <div>
-    <button class="btn btn-success" @onclick="() => AddOption()">+</button>
-    <button class="btn btn-danger" @onclick="() => RemoveOption()" disabled="@(mcq.AnswerOptions.Count <= 2)">–</button>
+	<button class="btn btn-success" @onclick="() => AddOption()">+</button>
+	<button class="btn btn-danger" @onclick="() => RemoveOption()" disabled="@(mcq.AnswerOptions.Count <= 2)">–</button>
 </div>
 <br />
 <label>Mark the correct options:</label>
-@foreach (var option in mcq.AnswerOptions)
+@for (int i = 0; i < mcq.AnswerOptions.Count; i++)
 {
-<br />
-<label>
-    <input class="form-check-input" type="checkbox"
-    checked="@mcq.CorrectAnswerOptions.Contains(option.ClientId.ToString())"
-    @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(option, e)"/>
-    @option.OptionText
-</label>
+	<br />
+	var index = i;
+	<label>
+		<input class="form-check-input" type="checkbox"
+			   checked="@mcq.CorrectAnswerOrderIndices.Contains(index)"
+			   @onchange="(ChangeEventArgs e) => OnCorrectOptionChange(index, e)" />
+		@mcq.AnswerOptions[index].OptionText
+	</label>
 }
 
 @code {
 
-    [Parameter]
-	public MultipleChoiceQuestion mcq { get; set; }
+		[Parameter]
+		public MultipleChoiceQuestion mcq { get; set; }
 
 	public void AddOption()
 	{
-        mcq.AnswerOptions.Add(new AnswerOption { OptionText = "" });
-    }
+		mcq.AnswerOptions.Add(new AnswerOption { OptionText = "" });
+	}
 
-    private void RemoveOption()
-    {
-        //Remove the answer option from correct answer, if it was selected
-		if (mcq.CorrectAnswerOptions.Contains(mcq.AnswerOptions.Last().ClientId.ToString()))
+	private void RemoveOption()
+	{
+		//Remove the answer option from correct answer, if it was selected
+		if (mcq.CorrectAnswerOrderIndices.Contains(mcq.AnswerOptions.Count - 1))
 		{
-            mcq.CorrectAnswerOptions.Remove(mcq.AnswerOptions.Last().ClientId.ToString());
+			mcq.CorrectAnswerOrderIndices.Remove(mcq.AnswerOptions.Count - 1);
 		}
 
-        mcq.AnswerOptions.RemoveAt(mcq.AnswerOptions.Count - 1);
+		mcq.AnswerOptions.RemoveAt(mcq.AnswerOptions.Count - 1);
 
-    }
+	}
 
-    void OnCorrectOptionChange(AnswerOption option, ChangeEventArgs e)
-    {
-        var isChecked = e.Value?.ToString()?.ToLower() == "true";
-        if (isChecked)
-        {
-            if (!mcq.CorrectAnswerOptions.Contains(option.ClientId.ToString()))
-                mcq.CorrectAnswerOptions.Add(option.ClientId.ToString());
-        }
-        else
-        {
-            mcq.CorrectAnswerOptions.Remove(option.ClientId.ToString());
-        }
-    }
+	void OnCorrectOptionChange(int index, ChangeEventArgs e)
+	{
+		var isChecked = e.Value?.ToString()?.ToLower() == "true";
+		if (isChecked)
+		{
+			if (!mcq.CorrectAnswerOrderIndices.Contains(index))
+				mcq.CorrectAnswerOrderIndices.Add(index);
+		}
+		else
+		{
+			mcq.CorrectAnswerOrderIndices.Remove(index);
+		}
+	}
 }

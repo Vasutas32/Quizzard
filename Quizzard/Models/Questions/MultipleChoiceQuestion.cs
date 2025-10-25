@@ -2,10 +2,10 @@
 
 namespace Quizzard.Models.Questions
 {
-    public class MultipleChoiceQuestion : Question
+    public class MultipleChoiceQuestion : OptionsQuestion
     {
         [NotMapped]
-        public List<string> CorrectAnswerOptions { get; set; } = new List<string>();
+        public List<int> CorrectAnswerOrderIndices { get; set; } = new List<int>();
 
         public MultipleChoiceQuestion()
         {
@@ -46,17 +46,17 @@ namespace Quizzard.Models.Questions
                 })
                 .ToList();
 
-            var newAnswerOptions = new List<string>();
+            var newAnswerOptions = new List<int>();
             for(int i = 0; i < this.AnswerOptions.Count; i++)
             {
                 var option = this.AnswerOptions[i];
-                if (this.CorrectAnswerOptions.Contains(option.ClientId.ToString()))
+                if (this.CorrectAnswerOrderIndices.Contains(option.OrderIndex))
                 {
-                    newAnswerOptions.Add(copy.AnswerOptions[i].ClientId.ToString());
+                    newAnswerOptions.Add(copy.AnswerOptions[i].OrderIndex);
                 }
             }
 
-            copy.CorrectAnswerOptions = new List<string>(newAnswerOptions);
+            copy.CorrectAnswerOrderIndices = new List<int>(this.CorrectAnswerOrderIndices);
 
             return copy;
         }

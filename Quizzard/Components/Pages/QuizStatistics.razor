@@ -34,13 +34,13 @@ else
         <p>
             Correct Answer(s):
             @string.Join(", ",
-                    GetCorrectAnswerTexts(qStat.QuestionId))
+                             GetCorrectAnswerTexts(qStat.QuestionId))
         </p>
 
         <PieChart Values="GetValues(qStat)"
-                  Colors="GetColors(qStat)"
-                  Labels="qStat.OptionPickCounts.Keys.ToArray()"
-                  Size="200" />
+        Colors="GetColors(qStat)"
+        Labels="qStat.OptionPickCounts.Keys.ToArray()"
+        Size="200" />
         <hr />
     }
 }
@@ -77,21 +77,22 @@ else
     {
         var question = quiz.Questions
                            .First(q => q.Id == questionId);
+        var optionsQuestion = question as OptionsQuestion;
 
         return question.Type switch
         {
             QuestionType.MultipleChoice =>
                 // CorrectAnswer is e.g. "0;2;3"
-                question.CorrectAnswer
+                optionsQuestion.CorrectAnswer
                         .Split(';', StringSplitOptions.RemoveEmptyEntries)
                         .Select(idx => int.Parse(idx))
-                        .Select(i => question.AnswerOptions[i].OptionText)
+                        .Select(i => optionsQuestion.AnswerOptions[i].OptionText)
                         .ToArray(),
 
             QuestionType.SingleChoice =>
                 new[] {
-                  question.AnswerOptions[
-                    int.Parse(question.CorrectAnswer)
+                  optionsQuestion.AnswerOptions[
+                    int.Parse(optionsQuestion.CorrectAnswer)
                   ].OptionText
                     },
 
@@ -108,15 +109,15 @@ else
 
             QuestionType.Pairing =>
                 // show pairs; e.g. "02;13" -> ["A1↔B2","A2↔B1"]
-                question.CorrectAnswer
+                optionsQuestion.CorrectAnswer
                         .Split(';', StringSplitOptions.RemoveEmptyEntries)
                         .Select(pair =>
                         {
                             var a = pair[0] - '0';
-                            var b = pair[1] - '0';
+                            var b = pair[2] - '0';
                             // rebuild from AnswerOptions (first half = A, second = B)
-                            var half = question.AnswerOptions.Count / 2;
-                            return $"{question.AnswerOptions[a].OptionText} ↔ {question.AnswerOptions[half + b].OptionText}";
+                            // var half = optionsQuestion.AnswerOptions.Count / 2;
+                            return $"{optionsQuestion.AnswerOptions[a].OptionText} ↔ {optionsQuestion.AnswerOptions[b].OptionText}";
                         })
                         .ToArray(),
 

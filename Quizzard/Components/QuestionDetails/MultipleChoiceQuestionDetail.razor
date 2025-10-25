@@ -1,13 +1,14 @@
 ﻿@using Quizzard.Models
 @using Quizzard.Models.Questions
 
-@foreach (var option in question.AnswerOptions)
+@for (int i = 0; i < question.AnswerOptions.Count; i++)
 {
+	var index = i;
 	<label style="margin-bottom: 10px;">
 		<input type="checkbox"
-			   checked="@IsChecked(question.Id, option)"
-			   @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, option, e)" />
-		@option.OptionText
+			   checked="@IsChecked(question.Id, question.AnswerOptions[index])"
+			   @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, question.AnswerOptions[index], e)" />
+		@question.AnswerOptions[index].OptionText
 	</label>
 	<br />
 }
@@ -23,12 +24,13 @@
 	[Parameter]
 	public List<UserAnswer> userAnswers { get; set; }
 
-
-	private Dictionary<int, List<string>> multipleChoiceSelections = new Dictionary<int, List<string>>();
+	//Dictionary key is the question id
+	//Value is a list of selected answer option indices
+	private Dictionary<int, List<int>> multipleChoiceSelections = new Dictionary<int, List<int>>();
 
 	private bool IsChecked(int questionId, AnswerOption option)
 	{
-		return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(option.ClientId.ToString());
+		return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(option.OrderIndex);
 	}
 
 	private void OnMultipleChoiceChange(int questionId, AnswerOption option, ChangeEventArgs e)
@@ -40,17 +42,17 @@
 		{
 			if (!multipleChoiceSelections.ContainsKey(questionId))
 			{
-				multipleChoiceSelections[questionId] = new List<string>();
+				multipleChoiceSelections[questionId] = new List<int>();
 			}
 			var selections = multipleChoiceSelections[questionId];
 			if (isChecked)
 			{
-				if (!selections.Contains(option.ClientId.ToString()))
-					selections.Add(option.ClientId.ToString());
+				if (!selections.Contains(option.OrderIndex))
+					selections.Add(option.OrderIndex);
 			}
 			else
 			{
-				selections.Remove(option.ClientId.ToString());
+				selections.Remove(option.OrderIndex);
 			}
 			ua.SelectedAnswer = string.Join(";", selections.OrderBy(x => x));
 		}

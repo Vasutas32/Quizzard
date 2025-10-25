@@ -17,7 +17,6 @@
         public QuestionType Type { get; protected set; }
         public int QuizId { get; set; }
         public Quiz Quiz { get; set; }
-        public List<AnswerOption> AnswerOptions { get; set; } = new List<AnswerOption>();
         public string CorrectAnswer { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
 
@@ -31,15 +30,15 @@
             var copy = (Question)this.MemberwiseClone();
 
             // 2) Deep‑clone the AnswerOptions list itself:
-            copy.AnswerOptions = this.AnswerOptions
-                .Select(opt => new AnswerOption
-                {
-                    // copy whichever fields AnswerOption has; at minimum:
-                    OptionText = opt.OptionText
-                })
-                .ToList();
+            //copy.AnswerOptions = this.AnswerOptions
+            //    .Select(opt => new AnswerOption
+            //    {
+            //        // copy whichever fields AnswerOption has; at minimum:
+            //        OptionText = opt.OptionText
+            //    })
+            //    .ToList();
 
-            copy.CorrectAnswer = copy.AnswerOptions.First().ClientId.ToString();
+            //copy.CorrectAnswer = copy.AnswerOptions.First().OrderIndex.ToString();
 
             return copy;
         }

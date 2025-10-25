@@ -29,11 +29,17 @@ namespace Quizzard.Data
         .Property<string>("QuestionType")
         .HasMaxLength(50);
 
-            // Configure the AnswerOption relationship if not already done.
             modelBuilder.Entity<AnswerOption>()
-                .HasOne(a => a.Question)
-                .WithMany(q => q.AnswerOptions)
-                .HasForeignKey(a => a.QuestionId);
+        .HasOne(a => a.Question) // AnswerOption has a Question property of type Question
+        .WithMany() // The inverse collection on the Question base class doesn't exist, so we use WithMany() or configure it on the derived class.
+        .HasForeignKey(a => a.QuestionId)
+        .IsRequired(); // An AnswerOption MUST belong to a Question
+
+            modelBuilder.Entity<OptionsQuestion>()
+        .HasMany(q => q.AnswerOptions)
+        .WithOne() // The inverse is configured in step 1, so we use WithOne() without a lambda
+        .HasForeignKey(a => a.QuestionId);
+
 
             base.OnModelCreating(modelBuilder);
         }

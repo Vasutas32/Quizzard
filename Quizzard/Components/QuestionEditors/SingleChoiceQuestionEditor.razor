@@ -1,6 +1,7 @@
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 
+<input type="checkbox" @bind="scq.IsShuffled">Shuffle answer options</input> 
 @for (int i = 0; i < scq.AnswerOptions.Count; i++)
 {
     var index = i;
@@ -14,26 +15,30 @@
 </div>
 <br />
 <label>Correct Answer:</label>
-<select style="font-family:'Comic Sans MS';" @onchange="(e) => scq.CorrectAnswer = e.Value.ToString()">
-	@foreach (var option in scq.AnswerOptions)
-	{
-        <option style="font-family:'Comic Sans MS';" value="@option.ClientId">@option.OptionText</option>
-	}
+<select style="font-family:'Comic Sans MS';" @bind="scq.CorrectAnswer">
+    @for (int i = 0; i < scq.AnswerOptions.Count; i++)
+    {
+        <option style="font-family:'Comic Sans MS';" value="@i">@scq.AnswerOptions[i].OptionText</option>
+    }
 </select>
 
 @code {
 
     [Parameter]
-    public Question scq { get; set; }
+    public SingleChoiceQuestion scq { get; set; }
 
     private void AddOption()
     {
-        scq.AnswerOptions.Add(new AnswerOption { OptionText = "", ClientId = Guid.NewGuid() });
+        scq.AnswerOptions.Add(new AnswerOption { OptionText = "" });
 
     }
 
     private void RemoveOption()
     {
+        if (scq.CorrectAnswer.Equals((scq.AnswerOptions.Count - 1).ToString()))
+		{
+			scq.CorrectAnswer = "0";
+		}
         scq.AnswerOptions.RemoveAt(scq.AnswerOptions.Count - 1);
 
     }

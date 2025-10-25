@@ -20,30 +20,53 @@
     <button class="btn btn-danger" @onclick="() => RemovePairRow()" disabled="@(pq.ColumnA.Count <= 2)">– Row</button>
 </div>
 <label class="mt-3">Set the correct match for each “A”:</label>
-@for (int i = 0; i < aCount; i++)
+@for (int a = 0; a < aCount; a++)
 {
-    var aIndex = i;
-    var a = pq.AnswerOptions[aIndex].ClientId.ToString();
-    var selectedB = pairs.TryGetValue(a, out var b) ? b : "";
+    var index = a;
+    var selectedB = pairs.TryGetValue(index, out var b) ? b : -1;
     <div class="d-flex align-items-center mb-2">
-        <strong class="me-2">@pq.ColumnA[aIndex] ↔</strong>
+        <strong class="me-2">@pq.ColumnA[index] ↔</strong>
         <select class="form-select w-auto"
         value="@selectedB"
-        @onchange="@(e => OnPairSelectionChanged(a, e.Value?.ToString() ?? "") )">
-            <option value="">(choose…)</option>
+        @onchange="@(e => OnPairSelectionChanged(index, int.Parse(e.Value?.ToString() ?? "-1")) )">
+            <option value="-1">(choose…)</option>
             @for (int j = 0; j < bCount; j++)
             {
-                var bIndex = j;
-                <option value="@pq.AnswerOptions[aCount + bIndex].ClientId.ToString()">@pq.ColumnB[bIndex]</option>
+                var indexB = j;
+                <option value="@indexB">@pq.ColumnB[indexB]</option>
             }
-        </select>    
+        </select>
     </div>
 }
+@* @for (int a = 0; a < aCount; a++)
+{
+    var listIndexA = a;
+
+    // Look up the paired B's OrderIndex (e.g., 3, 4, 5)
+    var pairedBOrderIndex = pairs.TryGetValue(listIndexA, out var bOrderIndex) ? bOrderIndex : -1;
+
+    <div class="d-flex align-items-center mb-2">
+        <strong class="me-2">@pq.ColumnA[listIndexA] ↔</strong>
+        <select class="form-select w-auto"
+                value="@pairedBOrderIndex"
+                @onchange="@(e => OnPairSelectionChanged(listIndexA, int.Parse(e.Value?.ToString() ?? "-1")) )">
+            <option value="-1">(choose…)</option>
+            @for (int j = 0; j < bCount; j++)
+            {
+                var listIndexB = j;
+                // Get the B OrderIndex (e.g., 3, 4, 5) to be the option's value
+                var bOptionOrderIndex = listIndexB + aCount;
+
+                <option value="@bOptionOrderIndex">@pq.ColumnB[listIndexB]</option>
+            }
+        </select>
+    </div>
+} *@
 
 @code {
 
     [Parameter]
-	public PairingQuestion pq { get; set; }
+    public PairingQuestion pq { get; set; }
 
     void AddPairRow()
     {
@@ -61,11 +84,9 @@
 
             // The list index for the A option being removed is the current ColumnA count - 1
             var aIndexToRemove = pq.ColumnA.Count - 1;
-            var aClientIdToRemove = pq.AnswerOptions[aIndexToRemove].ClientId.ToString();
 
             // The list index for the B option being removed is (A Count) + (B Count - 1)
             var bIndexToRemoveInAnswerOptions = pq.ColumnA.Count + pq.ColumnB.Count - 1;
-            var bClientIdToRemove = pq.AnswerOptions[bIndexToRemoveInAnswerOptions].ClientId.ToString();
 
             //Remove the actual text entries
             pq.ColumnA.RemoveAt(aIndexToRemove);
@@ -73,15 +94,15 @@
 
             //Clean up the CorrectPairs dictionary using the ClientIds
             //Remove the pairing where the removed A option was the Key (Column A item)
-            pq.CorrectPairs.Remove(aClientIdToRemove);
+            pq.CorrectPairs.Remove(aIndexToRemove);
 
             // Remove any pairing where the removed B option was the Value (Column B item)
             var aKeyPairedWithRemovedB = pq.CorrectPairs
-                .FirstOrDefault(kv => kv.Value == bClientIdToRemove).Key;
+                .FirstOrDefault(kv => kv.Value == bIndexToRemoveInAnswerOptions);
 
-            if (!string.IsNullOrEmpty(aKeyPairedWithRemovedB))
+            if (!aKeyPairedWithRemovedB.Equals(default(KeyValuePair<int, int>)))
             {
-                pq.CorrectPairs.Remove(aKeyPairedWithRemovedB);
+                pq.CorrectPairs.Remove(aKeyPairedWithRemovedB.Key);
             }
 
             //Synchronize AnswerOptions. This rebuilds the list, keeping the remaining IDs stable.
@@ -89,9 +110,18 @@
         }
     }
 
-    void OnPairSelectionChanged(string aClientId, string bClientId)
+    void OnPairSelectionChanged(int aListIndex, int bOrderIndex)
     {
-        // assign or re‑assign the correct B for this A
-        pq.CorrectPairs[aClientId] = bClientId;
+
+        if (bOrderIndex != -1)
+        {
+            // Assign or re-assign the pair
+            pq.CorrectPairs[aListIndex] = bOrderIndex;
+        }
+        else
+        {
+            // If "-1" (choose...) is selected, remove the pairing for this A item
+            pq.CorrectPairs.Remove(aListIndex);
+        }
     }
 }

@@ -6,7 +6,7 @@
 	@foreach (var options in scq.AnswerOptions)
 	{
 		<label style="margin-right: 20px;">
-			<InputRadio Value="@options.ClientId.ToString()" /> @options.OptionText
+			<InputRadio Value="@options.OrderIndex.ToString()" /> @options.OptionText
 		</label>
 	}
 </InputRadioGroup>

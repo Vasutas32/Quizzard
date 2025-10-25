@@ -20,7 +20,7 @@ namespace Quizzard.Services
         {
             return await _context.Quizzes
                 .Include(q => q.Questions)
-                .ThenInclude(q => q.AnswerOptions) // Ensure answer options are loaded
+                .ThenInclude(q => (q as OptionsQuestion).AnswerOptions) // Ensure answer options are loaded
                 .ToListAsync();
         }
 
@@ -28,7 +28,7 @@ namespace Quizzard.Services
         {
             return await _context.Quizzes
                 .Include(q => q.Questions)
-                .ThenInclude(q => q.AnswerOptions) // Ensure answer options are loaded
+                .ThenInclude(q => (q as OptionsQuestion).AnswerOptions) // Ensure answer options are loaded
                 .FirstOrDefaultAsync(q => q.Id == quizId);
         }
 
@@ -56,7 +56,7 @@ namespace Quizzard.Services
         {
             var quiz = await _context.Quizzes
                 .Include(q => q.Questions)
-                .ThenInclude(q => q.AnswerOptions) // Include answer options
+                .ThenInclude(q => (q as OptionsQuestion).AnswerOptions) // Include answer options
                 .FirstOrDefaultAsync(q => q.Id == quizResult.QuizId);
 
             if (quiz == null) throw new Exception("Quiz not found");
@@ -109,7 +109,7 @@ namespace Quizzard.Services
             // Per-question
             foreach (var q in await _context.Questions
                    .Where(q => q.QuizId == quizId)
-                   .Include(q => q.AnswerOptions)
+                   .Include(q => (q as OptionsQuestion).AnswerOptions)
                    .ToListAsync())
             {
                 var qStat = new QuestionStatistics
@@ -129,9 +129,9 @@ namespace Quizzard.Services
                 if (q is SingleChoiceQuestion || q is MultipleChoiceQuestion)
                 {
                     // for each option text, count how many answers used that index
-                    foreach (var opt in q.AnswerOptions)
+                    foreach (var opt in (q as OptionsQuestion).AnswerOptions)
                     {
-                        var idx = q.AnswerOptions.IndexOf(opt).ToString();
+                        var idx = (q as OptionsQuestion).AnswerOptions.IndexOf(opt).ToString();
                         qStat.OptionPickCounts[opt.OptionText] =
                             picks.Count(a => a.SelectedAnswer?.Split(';').Contains(idx) == true);
                     }
