@@ -38,30 +38,9 @@
         </select>
     </div>
 }
-@* @for (int a = 0; a < aCount; a++)
-{
-    var listIndexA = a;
-
-    // Look up the paired B's OrderIndex (e.g., 3, 4, 5)
-    var pairedBOrderIndex = pairs.TryGetValue(listIndexA, out var bOrderIndex) ? bOrderIndex : -1;
-
-    <div class="d-flex align-items-center mb-2">
-        <strong class="me-2">@pq.ColumnA[listIndexA] ↔</strong>
-        <select class="form-select w-auto"
-                value="@pairedBOrderIndex"
-                @onchange="@(e => OnPairSelectionChanged(listIndexA, int.Parse(e.Value?.ToString() ?? "-1")) )">
-            <option value="-1">(choose…)</option>
-            @for (int j = 0; j < bCount; j++)
-            {
-                var listIndexB = j;
-                // Get the B OrderIndex (e.g., 3, 4, 5) to be the option's value
-                var bOptionOrderIndex = listIndexB + aCount;
-
-                <option value="@bOptionOrderIndex">@pq.ColumnB[listIndexB]</option>
-            }
-        </select>
-    </div>
-} *@
+<div>
+<input type="checkbox" @bind="pq.IsShuffled"></input> Shuffle answer options
+</div>
 
 @code {
 

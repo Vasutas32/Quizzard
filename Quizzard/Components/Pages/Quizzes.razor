@@ -1,9 +1,12 @@
 ﻿@page "/quizzes"
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@implements IDisposable
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Authorization
 @using Quizzard.Models
+@using System.Security.Claims
 
 <h3>Quiz List</h3>
 
@@ -24,13 +27,19 @@ else
                 @quiz.Title
                 <button class="btn btn-success" style="margin: 5px;" @onclick="() => NavigateToQuiz(quiz.Id)">Start Quiz</button>
                 <button class="btn btn-primary" @onclick="() => NaviagteToStatistics(quiz.Id)">Stats</button>
-                <AuthorizeView Roles="Admin">
-                    <button class="btn btn-warning" @onclick="() => NavigateToEditQuiz(quiz.Id)">Edit</button>
+                <AuthorizeView>
+                    <Authorized Context="authContext">
+                        @if (authContext.User.IsInRole("Admin") || string.Equals(authContext.User.Identity?.Name, quiz.Creator))
+                        {
+                            <button class="btn btn-warning" @onclick="() => NavigateToEditQuiz(quiz.Id)">Edit</button>
+                        }
+                    </Authorized>
                 </AuthorizeView>
             </li>
         }
     </ul>
 }
+<button @onclick="Bello">Bello</button>
 
 <!-- Navigation Button to Add a New Quiz -->
 <button class="btn btn-warning" @onclick="NavigateToCreateQuiz">Create New Quiz</button>
@@ -38,11 +47,42 @@ else
 @code {
     private List<Quiz> quizzes;
 
+    private string? currentUserName;
+
     [Inject] private NavigationManager Navigation { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         quizzes = await QuizService.GetQuizzesAsync();
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+
+    public async Task Bello()
+    {
+        var authStateTask = AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        // 2. Await the task to get the AuthenticationState object
+        var authState = await authStateTask;
+
+        // 3. Extract the ClaimsPrincipal (the user object)
+        var user = authState.User;
+
+        // 4. Set your breakpoint here!
+        Console.WriteLine("--- User Debug Info ---");
+        Console.WriteLine($"Is Authenticated: {user.Identity?.IsAuthenticated}");
+        Console.WriteLine($"User Name (Identity Name): {user.Identity?.Name}");
+        Console.WriteLine($"User ID (NameIdentifier Claim): {user.FindFirst(ClaimTypes.NameIdentifier)?.Value}");
+        Console.WriteLine("-----------------------");
     }
 
     private void NavigateToCreateQuiz()

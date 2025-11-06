@@ -2,10 +2,13 @@
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
 @inject IWebHostEnvironment Env
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
 @using Quizzard.Components.QuestionEditors
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 @using Microsoft.AspNetCore.Components
+@using System.Security.Claims
 
 @if (_submitted)
 {
@@ -112,8 +115,12 @@ else
 	[Parameter]
 	public int? QuizId { get; set; }
 
+	private ClaimsPrincipal ClaimsPrincipalUser;
+
 	//Store the quiz object if editing
 	private Quiz? originalQuiz = null;
+
+	private string? currentUserName;
 
 
 	[Inject]
@@ -129,6 +136,13 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		ClaimsPrincipalUser = authState.User;
+
+		if (ClaimsPrincipalUser.Identity != null)
+		{
+			currentUserName = ClaimsPrincipalUser.Identity.Name;
+		}
 		if (QuizId.HasValue)
 		{
 			originalQuiz = await QuizService.GetQuizByIdAsync(QuizId.Value);
@@ -254,7 +268,7 @@ else
 			}
 			else
 			{
-				var newQuiz = new Quiz { Title = quizTitle, Questions = questions };
+				var newQuiz = new Quiz { Title = quizTitle, Questions = questions, Creator = currentUserName };
 				await QuizService.AddQuizAsync(newQuiz);
 
 			}

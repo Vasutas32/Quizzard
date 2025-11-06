@@ -25,11 +25,15 @@
 		@mcq.AnswerOptions[index].OptionText
 	</label>
 }
+<br />
+<br />
+<input type="checkbox" @bind="mcq.IsShuffled"></input> Shuffle answer options
+
 
 @code {
 
-		[Parameter]
-		public MultipleChoiceQuestion mcq { get; set; }
+	[Parameter]
+	public MultipleChoiceQuestion mcq { get; set; }
 
 	public void AddOption()
 	{

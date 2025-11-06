@@ -1,7 +1,6 @@
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 
-<input type="checkbox" @bind="scq.IsShuffled">Shuffle answer options</input> 
 @for (int i = 0; i < scq.AnswerOptions.Count; i++)
 {
     var index = i;
@@ -21,6 +20,9 @@
         <option style="font-family:'Comic Sans MS';" value="@i">@scq.AnswerOptions[i].OptionText</option>
     }
 </select>
+<br/>
+<br/>
+<input type="checkbox" @bind="scq.IsShuffled"></input> Shuffle answer options
 
 @code {
 

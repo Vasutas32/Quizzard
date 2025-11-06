@@ -16,6 +16,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<QuizService>();
 builder.Services.AddScoped<IQrCodeService, QrCodeService>();
 
+builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount>, Microsoft.AspNetCore.Identity.PasswordHasher<Quizzard.Models.UserAccount>>(); // <--- NEW
+
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 builder.Services.AddDbContext<QuizDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -51,16 +53,25 @@ app.UseAuthorization();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/LoginProcessor", async (string username, string password, HttpContext httpContext, QuizDbContext dbContext) =>
+app.MapGet("/LoginProcessor", async (string username, string password, HttpContext httpContext, QuizDbContext dbContext,
+    Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount> passwordHasher) => // <--- INJECTED) =>
 {
     var userAccount = dbContext.UserAccounts.FirstOrDefault(u => u.Username == username);
 
-    if (userAccount is null || userAccount.Password != password)
+    if (userAccount is null)
     {
         // Failed login, redirect back to the Blazor component with an error parameter
         return Results.Redirect("/login?error=Invalid credentials.");
     }
+    var result = passwordHasher.VerifyHashedPassword(
+        userAccount,
+        userAccount.Password, // The stored hash
+        password);
 
+    if (result == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed) // <--- IPasswordHasher method
+    {
+        return Results.Redirect("/login?error=Invalid credentials.");
+    }
     // SUCCESSFUL LOGIN: HttpContext is available here!
     var claims = new List<Claim>
     {
@@ -75,14 +86,12 @@ app.MapGet("/LoginProcessor", async (string username, string password, HttpConte
     return Results.Redirect("/");
 });
 
-// You'd create a similar endpoint for "/Register"
-// Program.cs (place this after the /Login endpoint)
-
 app.MapGet("/RegisterUser", async (
     HttpContext httpContext,
     string username,
     string password,
-    QuizDbContext dbContext) =>
+    QuizDbContext dbContext,
+    Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount> passwordHasher) => // <--- INJECTED) =>
 {
     // 1. Check if user already exists
     var existingUser = dbContext.UserAccounts.FirstOrDefault(u => u.Username == username);
@@ -95,10 +104,11 @@ app.MapGet("/RegisterUser", async (
     var newUser = new UserAccount // Assuming UserAccount model is available
     {
         Username = username,
-        Password = password, // WARNING: Hash this password in a real app!
         Role = "User"
     };
 
+    var hashedPassword = passwordHasher.HashPassword(newUser, password);
+    newUser.Password = hashedPassword;
     dbContext.UserAccounts.Add(newUser);
     await dbContext.SaveChangesAsync();
 
