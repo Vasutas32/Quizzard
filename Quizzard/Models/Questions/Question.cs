@@ -14,8 +14,11 @@
     {
         public int Id { get; set; }
         public string Text { get; set; } = string.Empty;
+        //TODO: REMOVE
         public QuestionType Type { get; protected set; }
+        //Foreign key
         public int QuizId { get; set; }
+        //Navigation property
         public Quiz Quiz { get; set; }
         public string CorrectAnswer { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
@@ -29,18 +32,8 @@
         {
             var copy = (Question)this.MemberwiseClone();
 
-            // 2) Deep‑clone the AnswerOptions list itself:
-            //copy.AnswerOptions = this.AnswerOptions
-            //    .Select(opt => new AnswerOption
-            //    {
-            //        // copy whichever fields AnswerOption has; at minimum:
-            //        OptionText = opt.OptionText
-            //    })
-            //    .ToList();
-
-            //copy.CorrectAnswer = copy.AnswerOptions.First().OrderIndex.ToString();
-
             return copy;
         }
+
     }
 }

@@ -1,8 +1,6 @@
 ﻿@page "/quizzes"
 @rendermode InteractiveServer
 @inject Quizzard.Services.QuizService QuizService
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@implements IDisposable
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Authorization
 @using Quizzard.Models
@@ -29,7 +27,7 @@ else
                 <button class="btn btn-primary" @onclick="() => NaviagteToStatistics(quiz.Id)">Stats</button>
                 <AuthorizeView>
                     <Authorized Context="authContext">
-                        @if (authContext.User.IsInRole("Admin") || string.Equals(authContext.User.Identity?.Name, quiz.Creator))
+                        @if (authContext.User.IsInRole("Admin") || (currentUserId== quiz.CreatorId))
                         {
                             <button class="btn btn-warning" @onclick="() => NavigateToEditQuiz(quiz.Id)">Edit</button>
                         }
@@ -47,42 +45,47 @@ else
 @code {
     private List<Quiz> quizzes;
 
-    private string? currentUserName;
+    private int? currentUserId;
+
+    [CascadingParameter]
+    protected Task<AuthenticationState>? AuthState { get; set; }
+
+    private AuthenticationState? currentAuthState;
 
     [Inject] private NavigationManager Navigation { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         quizzes = await QuizService.GetQuizzesAsync();
     }
 
-    private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    protected override async Task OnParametersSetAsync()
     {
-        await InvokeAsync(StateHasChanged);
-    }
+        // 2. A kaszkádolt paraméter lekérése, és a nézet frissítése,
+        // amikor a hitelesítési állapot VÁLTOZIK (pl. bejelentkezés)
+        if (AuthState != null)
+        {
+            currentAuthState = await AuthState;
+            var user = currentAuthState.User;
 
-    public void Dispose()
-    {
-        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+            //Comparison needed due to IsAuthenticated being bool?
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                var idClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (int.TryParse(idClaim, out int userId))
+				{
+					currentUserId = userId;
+				}
+            }
+            else
+            {
+                currentUserId = null;
+            }
+        }
     }
 
     public async Task Bello()
     {
-        var authStateTask = AuthenticationStateProvider.GetAuthenticationStateAsync();
-
-        // 2. Await the task to get the AuthenticationState object
-        var authState = await authStateTask;
-
-        // 3. Extract the ClaimsPrincipal (the user object)
-        var user = authState.User;
-
-        // 4. Set your breakpoint here!
-        Console.WriteLine("--- User Debug Info ---");
-        Console.WriteLine($"Is Authenticated: {user.Identity?.IsAuthenticated}");
-        Console.WriteLine($"User Name (Identity Name): {user.Identity?.Name}");
-        Console.WriteLine($"User ID (NameIdentifier Claim): {user.FindFirst(ClaimTypes.NameIdentifier)?.Value}");
-        Console.WriteLine("-----------------------");
     }
 
     private void NavigateToCreateQuiz()

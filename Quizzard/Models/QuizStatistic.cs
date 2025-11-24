@@ -7,10 +7,10 @@
         public int TotalAttempts { get; set; }
         public int PerfectAttempts { get; set; }
         public double AverageScore { get; set; }
-        public List<QuestionStatistics> Questions { get; set; } = new();
+        public List<QuestionStatistic> Questions { get; set; } = new();
     }
 
-    public class QuestionStatistics
+    public class QuestionStatistic
     {
         public int QuestionId { get; set; }
         public string QuestionText { get; set; } = "";

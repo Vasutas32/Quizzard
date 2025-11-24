@@ -76,7 +76,8 @@ app.MapGet("/LoginProcessor", async (string username, string password, HttpConte
     var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Role, userAccount.Role),
-        new Claim(ClaimTypes.Name, username)
+        new Claim(ClaimTypes.Name, username),
+        new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString())
     };
 
     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -125,6 +126,13 @@ app.MapGet("/RegisterUser", async (
     await httpContext.SignInAsync(principal);
 
     // 4. Redirect to the home page
+    return Results.Redirect("/");
+});
+
+app.MapGet("/logout-handler", async (HttpContext httpContext) =>
+{
+    // A Blazor kivezetõ pontja
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     return Results.Redirect("/");
 });
 

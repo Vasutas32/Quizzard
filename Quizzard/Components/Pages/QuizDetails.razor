@@ -3,11 +3,14 @@
 @inject Quizzard.Services.QuizService QuizService
 @inject Quizzard.Services.IQrCodeService QrCodeService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
 @using QRCoder
 @using Quizzard.Components.QuestionDetails
 @using Quizzard.Models
 @using Quizzard.Models.Questions
 @using System.Drawing
+@using System.Security.Claims
 
 
 @if (quiz != null)
@@ -102,6 +105,10 @@ else
 	private bool _submitted;
 	private int _correct, _total;
 
+	private ClaimsPrincipal ClaimsPrincipalUser;
+	private string? currentUserName;
+
+
 	private void Bello()
 	{
 		Console.WriteLine("I'm doing the bello!!");
@@ -111,6 +118,14 @@ else
 	protected override async Task OnInitializedAsync()
 	{
 		quiz = await QuizService.GetQuizByIdAsync(quizId);
+
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		ClaimsPrincipalUser = authState.User;
+
+		if (ClaimsPrincipalUser.Identity != null)
+		{
+			currentUserName = ClaimsPrincipalUser.Identity.Name;
+		}
 
 		var absoluteUri = Navigation.ToAbsoluteUri($"/quizzes/{quizId}").ToString();
 		QrDataUrl = await QrCodeService.GenerateQrCodeDataUrlAsync(absoluteUri);
@@ -197,7 +212,8 @@ else
 				QuizId = quizId,
 				Answers = userAnswers,
 				CorrectAnswers = userAnswers.Count(a => a.IsCorrect),
-				WrongAnswers = userAnswers.Count(a => !a.IsCorrect)
+				WrongAnswers = userAnswers.Count(a => !a.IsCorrect),
+				UserId = currentUserName
 			};
 
 		await QuizService.SaveQuizResultAsync(quizResult);

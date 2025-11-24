@@ -59,12 +59,12 @@ else
     }
 
     // Pulls out the counts as doubles for the PieChart.
-    private double[] GetValues(QuestionStatistics qStat)
+    private double[] GetValues(QuestionStatistic qStat)
         => qStat.OptionPickCounts.Values.Select(c => (double)c).ToArray();
 
 
     // Generates one color per slice (just cycling HSL here).
-    private string[] GetColors(QuestionStatistics qStat)
+    private string[] GetColors(QuestionStatistic qStat)
     {
         var n = qStat.OptionPickCounts.Count;
         return Enumerable.Range(0, n)

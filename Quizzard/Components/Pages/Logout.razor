@@ -1,24 +1,54 @@
 ﻿@page "/logout"
-@using Microsoft.AspNetCore.Authentication
-@inject NavigationManager navigationManager
+@* @using Microsoft.AspNetCore.Authentication *@
+@* @inject NavigationManager navigationManager *@
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 
 
 <h3>You have logged out.</h3>
 
 @code {
 
-	[CascadingParameter]
-	public HttpContext? HttpContext { get; set; }
+	// [CascadingParameter]
+	// public HttpContext? HttpContext { get; set; }
 
-	protected override async Task OnInitializedAsync()
-	{
+	// protected override async Task OnInitializedAsync()
+	// {
 
-		await base.OnInitializedAsync();
-		if (HttpContext.User.Identity.IsAuthenticated)
-		{
-			await HttpContext.SignOutAsync();
-			navigationManager.NavigateTo("/");
-		}
+	// 	await base.OnInitializedAsync();
+	// 	if (HttpContext.User.Identity.IsAuthenticated)
+	// 	{
+	// 		await HttpContext.SignOutAsync();
+	// 		navigationManager.NavigateTo("/");
+	// 	}
+	// }
+	@code {
+
+        private bool isFirstRender = true;
+
+        // A JavaScript Interop-ot ide kell tenni, MÁR AZ ÉS CSAK AZ ELSŐ RENDERELÉS UTÁN.
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender && isFirstRender)
+            {
+                isFirstRender = false;
+
+                // 1. Létrehozzuk a teljes URI-t a Minimal API végponthoz.
+                var logoutUri = Navigation.ToAbsoluteUri("/logout-handler").AbsoluteUri;
+
+                // 2. JavaScript Interop használata a teljes, kényszerített HTTP átirányításhoz.
+                // Ez garantálja, hogy a böngésző hagyományos kérést küld a szervernek.
+                try
+                {
+                    await JSRuntime.InvokeVoidAsync("window.location.replace", logoutUri);
+                }
+                catch (Exception ex)
+                {
+                    // Elkapjuk az esetleges JS Interop hibákat, de általában ezen a ponton már rendben van.
+                    Console.WriteLine($"Error during forced logout redirect: {ex.Message}");
+                }
+            }
+        }
 	}
-
 }

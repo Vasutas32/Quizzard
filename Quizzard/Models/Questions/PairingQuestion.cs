@@ -26,6 +26,7 @@ namespace Quizzard.Models.Questions
             int oldCount = AnswerOptions.Count;
 
             // Safety check: Calculate the true count of the smaller list to use as 'half'
+            //For now became redundant, but will be useful if we allow uneven columns in the future.
             int existingACount = Math.Min(oldCount, aCount);
             int existingBCount = Math.Min(oldCount - existingACount, bCount);
 

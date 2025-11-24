@@ -120,7 +120,7 @@ else
 	//Store the quiz object if editing
 	private Quiz? originalQuiz = null;
 
-	private string? currentUserName;
+	private int? currentUserId;
 
 
 	[Inject]
@@ -139,10 +139,23 @@ else
 		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 		ClaimsPrincipalUser = authState.User;
 
-		if (ClaimsPrincipalUser.Identity != null)
+		if (ClaimsPrincipalUser.Identity?.IsAuthenticated == true)
 		{
-			currentUserName = ClaimsPrincipalUser.Identity.Name;
+			var idClaim = ClaimsPrincipalUser.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (int.TryParse(idClaim, out int userId))
+			{
+				currentUserId = userId;
+			}
 		}
+		else
+		{
+			currentUserId = null;
+		}
+
+
+
+
+
 		if (QuizId.HasValue)
 		{
 			originalQuiz = await QuizService.GetQuizByIdAsync(QuizId.Value);
@@ -268,7 +281,7 @@ else
 			}
 			else
 			{
-				var newQuiz = new Quiz { Title = quizTitle, Questions = questions, Creator = currentUserName };
+				var newQuiz = new Quiz { Title = quizTitle, Questions = questions, CreatorId = currentUserId };
 				await QuizService.AddQuizAsync(newQuiz);
 
 			}

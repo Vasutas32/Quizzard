@@ -112,7 +112,7 @@ namespace Quizzard.Services
                    .Include(q => (q as OptionsQuestion).AnswerOptions)
                    .ToListAsync())
             {
-                var qStat = new QuestionStatistics
+                var qStat = new QuestionStatistic
                 {
                     QuestionId = q.Id,
                     QuestionText = q.Text,

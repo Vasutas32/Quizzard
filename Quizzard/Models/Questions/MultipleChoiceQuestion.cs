@@ -31,6 +31,10 @@ namespace Quizzard.Models.Questions
                 .ToList();
 
             return correct.SequenceEqual(selected);
+
+            //No need to normalize useranswer and correctanswer once we normalize them beforehand
+            //return string.Equals(userAnswer.SelectedAnswer?.Trim(), this.CorrectAnswer?.Trim(), StringComparison.OrdinalIgnoreCase);
+
         }
 
         public override Question Copy()
