@@ -100,7 +100,7 @@ else
 
 	<button class="btn btn-success" @onclick="SaveQuiz">Save Quiz</button>
 	<button class="btn btn-danger" @onclick="Cancel">Cancel</button>
-	<button class="btn btn-close" @onclick="Bello">Bello</button>
+	@* <button class="btn btn-close" @onclick="Bello">Bello</button> *@
 }
 
 @code {
@@ -151,10 +151,6 @@ else
 		{
 			currentUserId = null;
 		}
-
-
-
-
 
 		if (QuizId.HasValue)
 		{
@@ -234,7 +230,7 @@ else
 	}
 
 	private void CopyQuestion(Question question)
-	{
+	{	
 		questionToCopy = question.Copy();
 	}
 
@@ -318,7 +314,7 @@ else
 		await using var fs = File.OpenWrite(savePath);
 		await file.OpenReadStream(maxAllowedSize: 10_000_000).CopyToAsync(fs);
 
-		// save the *relative* path back into your model
+		// save the relative path back into the model
 		question.ImagePath = $"uploads/{fileName}";
 	}
 

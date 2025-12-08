@@ -37,7 +37,7 @@ else
         }
     </ul>
 }
-<button @onclick="Bello">Bello</button>
+@* <button @onclick="Bello">Bello</button> *@
 
 <!-- Navigation Button to Add a New Quiz -->
 <button class="btn btn-warning" @onclick="NavigateToCreateQuiz">Create New Quiz</button>
@@ -56,7 +56,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        quizzes = await QuizService.GetQuizzesAsync();
+        quizzes = await QuizService.GetQuizzesWithoutQuestionsAsync();
     }
 
     protected override async Task OnParametersSetAsync()

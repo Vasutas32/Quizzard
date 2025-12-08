@@ -24,6 +24,11 @@ namespace Quizzard.Services
                 .ToListAsync();
         }
 
+        public async Task<List<Quiz>> GetQuizzesWithoutQuestionsAsync()
+        {
+            return await _context.Quizzes.ToListAsync();
+        }
+
         public async Task<Quiz> GetQuizByIdAsync(int quizId)
         {
             return await _context.Quizzes

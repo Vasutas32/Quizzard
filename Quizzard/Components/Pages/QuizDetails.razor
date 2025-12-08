@@ -194,13 +194,6 @@ else
 				Question = q,
 				SelectedAnswer = "" // Default: no answer selected
 			}).ToList();
-
-		foreach (var q in quiz.Questions.OfType<PairingQuestion>())
-		{
-			selectedA[q.Id] = null;
-			selectedB[q.Id] = null;
-			pairs[q.Id] = new Dictionary<int, int>();
-		}
 	}
 
 	private Dictionary<int, List<int>> multipleChoiceSelections = new Dictionary<int, List<int>>();
