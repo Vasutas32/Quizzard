@@ -53,7 +53,7 @@
 						break;
 
 					case MultipleChoiceQuestion mcq:
-						<MultipleChoiceQuestionDetail question="@mcq" userAnswer="@userAnswer" userAnswers="@userAnswers"></MultipleChoiceQuestionDetail>
+						<MultipleChoiceQuestionDetail question="@mcq" userAnswer="@userAnswer"></MultipleChoiceQuestionDetail>
 						break;
 
 					case TrueFalseQuestion tfq:
@@ -65,7 +65,7 @@
 						break;
 
 					case PairingQuestion pq:
-						<PairingQuestionDetail question="@question" pq="@pq" pairs="@pairs" _pairColors="@_pairColors" selectedA="@selectedA" selectedB="@selectedB" userAnswers="@userAnswers"></PairingQuestionDetail>
+						<PairingQuestionDetail pq="@pq" userAnswer="@userAnswer"></PairingQuestionDetail>
 						break;
 					default:
 						break;

@@ -8,11 +8,12 @@
 		@for (int i = 0; i < pq.ColumnA.Count; i++)
 		{
 			var index = i;
-			var bg = pairs[question.Id].ContainsKey(pq.AnswerOptions[index].OrderIndex)
-			? ColorForPair(question.Id, pq.AnswerOptions[index].OrderIndex)
-			: "white";
+			var orderIndex = pq.AnswerOptions[index].OrderIndex;
+			var bg = pairs.ContainsKey(orderIndex)
+			? ColorForPair(orderIndex)
+			: (selectedAIndex == orderIndex ? "#e0e0e0" : "white");
 			<button class="btn" style="margin:0.2rem; background:@bg;"
-					@onclick="() => OnClickA(question.Id, pq.AnswerOptions[index].OrderIndex)">
+			@onclick="() => OnClickA(orderIndex)">
 				@pq.ColumnA[index]
 			</button>
 		}
@@ -23,15 +24,19 @@
 		@for (int j = 0; j < pq.ColumnB.Count; j++)
 		{
 			var index = j;
-			var pairedA = pairs[question.Id]
-			.FirstOrDefault(kv => kv.Value == pq.AnswerOptions[index + pq.ColumnA.Count].OrderIndex).Key;
+			var orderIndex = pq.AnswerOptions[index + pq.ColumnA.Count].OrderIndex;
+			var pairedA = pairs.FirstOrDefault(kv => kv.Value == orderIndex).Key;
 			string bg = "white";
-			if (TryGetPairedA(question.Id, pq.AnswerOptions[index + pq.ColumnA.Count].OrderIndex, out var aClientId))
+			if (TryGetPairedA(orderIndex, out var aIndex))
 			{
-				bg = ColorForPair(question.Id, aClientId);
+				bg = ColorForPair(aIndex);
+			}
+			else if (selectedBIndex == orderIndex)
+			{
+				bg = "#e0e0e0";
 			}
 			<button class="btn" style="margin:0.2rem; background:@bg;"
-					@onclick="() => OnClickB(question.Id, pq.AnswerOptions[index + pq.ColumnA.Count].OrderIndex)">
+					@onclick="() => OnClickB(orderIndex)">
 				@pq.ColumnB[index]
 			</button>
 		}
@@ -42,124 +47,100 @@
 
 	[Parameter]
 	public PairingQuestion pq { get; set; }
-	[Parameter]
-	public Question question { get; set; }
 
 	[Parameter]
-	public List<UserAnswer> userAnswers { get; set; }
+	public UserAnswer userAnswer { get; set; }
 
 
-	[Parameter]
-	public Dictionary<int, Dictionary<int, int>> pairs { get; set; }
-	[Parameter]
-	public Dictionary<int, int?> selectedA { get; set; }
-	[Parameter]
-	public Dictionary<int, int?> selectedB { get; set; }
+	private Dictionary<int, int> pairs = new Dictionary<int, int>();
 
-	private static readonly string[] PairColors = new[]
-		{
-	"#FF0000", "#BAE1FF", "#B4DA55", "#FFFFBA", "#E2BAFF", "#FFDAC1"
-  };
+	private int? selectedAIndex;
 
-	[Parameter]
-	public Dictionary<int, Dictionary<int, string>> _pairColors { get; set; }
+	private int? selectedBIndex;
 
-	private Dictionary<int, int> _nextPairColorIndex = new();
+	private static readonly string[] palette = new[]
+	{
+		"#FF0000", "#BAE1FF", "#B4DA55", "#FFFFBA", "#E2BAFF", "#FFDAC1"
+	};
 
 
-	void OnClickA(int qid, int aIndex)
+	private Dictionary<int, string> pairColors = new Dictionary<int, string>();
+
+	private int nextColorSlot = 0;
+
+
+	void OnClickA(int aIndex)
 	{
 		// toggle‐off if clicked twice
-		if (selectedA[qid] == aIndex)
+		if (selectedAIndex == aIndex)
 		{
-			selectedA[qid] = null;
+			selectedAIndex = null;
 			return;
 		}
-		selectedA[qid] = aIndex;
+		selectedAIndex = aIndex;
 
 		// if B had already a selection, commit the pair
-		if (selectedB[qid].HasValue)
+		if (selectedBIndex.HasValue)
 		{
-			var bIndex = selectedB[qid].Value;
-
-			// remove any existing pairing that pointed to this bi:
-			if (TryGetPairedA(qid, bIndex, out var oldAIndex))
-			{
-				pairs[qid].Remove(oldAIndex);
-				_pairColors[qid].Remove(oldAIndex);
-			}
-
-			// add the new pairing and assign it a fresh color
-			pairs[qid][aIndex] = bIndex;
-			EnsureHasColor(qid, aIndex);
-
-			// clear temporary selections
-			selectedA[qid] = selectedB[qid] = null;
-			UpdateUserAnswer(qid);
+			FormPair(aIndex, selectedBIndex.Value);
 		}
 	}
 
-	void OnClickB(int qid, int bIndex)
+	void OnClickB(int bIndex)
 	{
 		// toggle‐off if clicked twice
-		if (selectedB[qid] == bIndex)
+		if (selectedBIndex == bIndex)
 		{
-			selectedB[qid] = null;
+			selectedBIndex = null;
 			return;
 		}
-		selectedB[qid] = bIndex;
+		selectedBIndex = bIndex;
 
 		// if A had already a selection, commit the pair
-		if (selectedA[qid].HasValue)
+		if (selectedAIndex.HasValue)
 		{
-			var aIndex = selectedA[qid].Value;
+			FormPair(selectedAIndex.Value, bIndex);
+		}
+	}
 
-			// remove any existing pairing that pointed to this bi:
-			if (TryGetPairedA(qid, bIndex, out var oldAIndex))
-			{
-				pairs[qid].Remove(oldAIndex);
-				_pairColors[qid].Remove(oldAIndex);
-			}
+	private void FormPair(int aIndex, int bIndex)
+	{
+		// remove any existing pairing that pointed to this bi:
+		if (TryGetPairedA(bIndex, out var oldAIndex))
+		{
+			pairs.Remove(oldAIndex);
+			pairColors.Remove(oldAIndex);
+		}
 
-			// add the new pairing and assign it a fresh color
-			pairs[qid][aIndex] = bIndex;
-			EnsureHasColor(qid, aIndex);
+		// add the new pairing and assign it a fresh color
+		pairs[aIndex] = bIndex;
 
-			// clear temporary selections
-			selectedA[qid] = selectedB[qid] = null;
-			UpdateUserAnswer(qid);
+		EnsureHasColor(aIndex);
+
+		// clear temporary selections
+		selectedAIndex = null;
+		selectedBIndex = null;
+
+		UpdateUserAnswer();
+	}
+
+	private void EnsureHasColor(int aIndex)
+	{
+		if (!pairColors.ContainsKey(aIndex))
+		{
+			var color = nextColorSlot < palette.Length
+						? palette[nextColorSlot]
+						: $"hsl({nextColorSlot * 60 % 360},70%,80%)";
+
+			pairColors[aIndex] = color;
+			nextColorSlot++;
 		}
 	}
 
 
-
-	private void EnsureHasColor(int qid, int aIndex)
+	private bool TryGetPairedA(int bIndex, out int aIndex)
 	{
-		if (!_pairColors.TryGetValue(qid, out var map))
-			_pairColors[qid] = map = new Dictionary<int, string>();
-
-		if (!_nextPairColorIndex.TryGetValue(qid, out var next))
-			_nextPairColorIndex[qid] = next = 0;
-
-		if (!map.ContainsKey(aIndex))
-		{
-			// grab the slot, *then* increment
-			var slot = next;
-			_nextPairColorIndex[qid] = next + 1;
-
-			// pick the color
-			var color = slot < PairColors.Length
-						? PairColors[slot]
-						: $"hsl({slot * 60 % 360},70%,80%)";
-
-			map[aIndex] = color;
-		}
-	}
-
-
-	private bool TryGetPairedA(int qid, int bIndex, out int aIndex)
-	{
-		foreach (var kv in pairs[qid])
+		foreach (var kv in pairs)
 		{
 			if (kv.Value == bIndex)
 			{
@@ -171,22 +152,17 @@
 		return false;
 	}
 
-	string ColorForPair(int qid, int aIndex)
+	string ColorForPair(int aIndex)
 	{
-		if (_pairColors.TryGetValue(qid, out var map) &&
-			map.TryGetValue(aIndex, out var color))
-			return color;
-		return "transparent";
+		return pairColors.TryGetValue(aIndex, out var color) ? color : "transparent";
 	}
 
-	void UpdateUserAnswer(int qid)
+	void UpdateUserAnswer()
 	{
 		// flatten dictionary ai→bi into "ai bi; ai bi; ..." form, sorted by ai
-		var dict = pairs[qid];
-		var entries = dict.OrderBy(kv => kv.Key)
+		var entries = pairs.OrderBy(kv => kv.Key)
 								.Select(kv => $"{kv.Key}:{kv.Value}");
 
-		userAnswers.First(a => a.QuestionId == qid)
-							.SelectedAnswer = string.Join(";", entries);
+		userAnswer.SelectedAnswer = string.Join(";", entries);
 	}
 }

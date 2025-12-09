@@ -6,8 +6,8 @@
 	var index = i;
 	<label style="margin-bottom: 10px;">
 		<input type="checkbox"
-			   checked="@IsChecked(question.Id, question.AnswerOptions[index])"
-			   @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.Id, question.AnswerOptions[index], e)" />
+			   checked="@IsChecked(question.AnswerOptions[index])"
+			   @onchange="(ChangeEventArgs e) => OnMultipleChoiceChange(question.AnswerOptions[index], e)" />
 		@question.AnswerOptions[index].OptionText
 	</label>
 	<br />
@@ -21,40 +21,31 @@
 	[Parameter]
 	public UserAnswer userAnswer { get; set; }
 
-	[Parameter]
-	public List<UserAnswer> userAnswers { get; set; }
-
 	//Dictionary key is the question id
 	//Value is a list of selected answer option indices
-	private Dictionary<int, List<int>> multipleChoiceSelections = new Dictionary<int, List<int>>();
+	private List<int> selectedOrderIndices = new List<int>();
 
-	private bool IsChecked(int questionId, AnswerOption option)
+	private bool IsChecked(AnswerOption option)
 	{
-		return multipleChoiceSelections.TryGetValue(questionId, out var selections) && selections.Contains(option.OrderIndex);
+		return selectedOrderIndices.Contains(option.OrderIndex);
 	}
 
-	private void OnMultipleChoiceChange(int questionId, AnswerOption option, ChangeEventArgs e)
+	private void OnMultipleChoiceChange(AnswerOption option, ChangeEventArgs e)
 	{
 		var isChecked = e.Value?.ToString()?.ToLower() == "true";
 
-		var ua = userAnswers.FirstOrDefault(a => a.QuestionId == questionId);
-		if (ua != null)
+		if (userAnswer != null)
 		{
-			if (!multipleChoiceSelections.ContainsKey(questionId))
-			{
-				multipleChoiceSelections[questionId] = new List<int>();
-			}
-			var selections = multipleChoiceSelections[questionId];
 			if (isChecked)
 			{
-				if (!selections.Contains(option.OrderIndex))
-					selections.Add(option.OrderIndex);
+				if (!selectedOrderIndices.Contains(option.OrderIndex))
+					selectedOrderIndices.Add(option.OrderIndex);
 			}
 			else
 			{
-				selections.Remove(option.OrderIndex);
+				selectedOrderIndices.Remove(option.OrderIndex);
 			}
-			ua.SelectedAnswer = string.Join(";", selections.OrderBy(x => x));
+			userAnswer.SelectedAnswer = string.Join(";", selectedOrderIndices.OrderBy(x => x));
 		}
 	}
 }
