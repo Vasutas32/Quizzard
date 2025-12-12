@@ -152,7 +152,43 @@ namespace Quizzard.Services
                     foreach (var group in picks.GroupBy(a => a.SelectedAnswer))
                         qStat.OptionPickCounts[group.Key] = group.Count();
                 }
-                // pairing could be handled similarly
+                else if (q is PairingQuestion)
+                {
+                    // Prep correct pairs set
+                    // CorrectAnswer string e.g.: "0:3;1:4;2:5"
+                    var correctPairsSet = new HashSet<string>(
+                        q.CorrectAnswer.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                    );
+
+                    int maxPairs = correctPairsSet.Count; 
+
+                    // Iterate over each user's answer
+                    foreach (var answer in picks)
+                    {
+                        if (string.IsNullOrWhiteSpace(answer.SelectedAnswer))
+                        {
+                            // If empty 0 pairs
+                            string label = $"0 / {maxPairs} pair";
+                            if (!qStat.OptionPickCounts.ContainsKey(label)) qStat.OptionPickCounts[label] = 0;
+                            qStat.OptionPickCounts[label]++;
+                            continue;
+                        }
+
+                        // User's pairs: "0:3;1:5;2:4"
+                        var userPairs = answer.SelectedAnswer.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+                        // Count how many match with the correct pairs
+                        int correctCount = userPairs.Count(p => correctPairsSet.Contains(p));
+
+                        string key = $"{correctCount} / {maxPairs} pair";
+
+                        if (!qStat.OptionPickCounts.ContainsKey(key))
+                        {
+                            qStat.OptionPickCounts[key] = 0;
+                        }
+                        qStat.OptionPickCounts[key]++;
+                    }
+                }
 
                 stats.Questions.Add(qStat);
             }
