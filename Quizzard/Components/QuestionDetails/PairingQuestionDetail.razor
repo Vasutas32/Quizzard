@@ -3,7 +3,7 @@
 
 <div style="display:flex; gap:2rem;">
 	<!-- Column A -->
-	<div>
+	<div style="display:flex; flex-direction: column;">
 		<h5>Column A</h5>
 		@for (int i = 0; i < pq.ColumnA.Count; i++)
 		{
@@ -19,7 +19,7 @@
 		}
 	</div>
 	<!-- Column B -->
-	<div>
+	<div style="display:flex; flex-direction: column;">
 		<h5>Column B</h5>
 		@for (int j = 0; j < pq.ColumnB.Count; j++)
 		{

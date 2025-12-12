@@ -16,7 +16,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<QuizService>();
 builder.Services.AddScoped<IQrCodeService, QrCodeService>();
 
-builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount>, Microsoft.AspNetCore.Identity.PasswordHasher<Quizzard.Models.UserAccount>>(); // <--- NEW
+builder.Services.AddSingleton<Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount>, Microsoft.AspNetCore.Identity.PasswordHasher<Quizzard.Models.UserAccount>>();
 
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection");
 builder.Services.AddDbContext<QuizDbContext>(options => options.UseNpgsql(connectionString));
@@ -54,7 +54,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapGet("/LoginProcessor", async (string username, string password, HttpContext httpContext, QuizDbContext dbContext,
-    Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount> passwordHasher) => // <--- INJECTED) =>
+    Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount> passwordHasher) =>
 {
     var userAccount = dbContext.UserAccounts.FirstOrDefault(u => u.Username == username);
 
@@ -68,7 +68,7 @@ app.MapGet("/LoginProcessor", async (string username, string password, HttpConte
         userAccount.Password, // The stored hash
         password);
 
-    if (result == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed) // <--- IPasswordHasher method
+    if (result == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed) 
     {
         return Results.Redirect("/login?error=Invalid credentials.");
     }
@@ -92,7 +92,7 @@ app.MapGet("/RegisterUser", async (
     string username,
     string password,
     QuizDbContext dbContext,
-    Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount> passwordHasher) => // <--- INJECTED) =>
+    Microsoft.AspNetCore.Identity.IPasswordHasher<Quizzard.Models.UserAccount> passwordHasher) => 
 {
     // 1. Check if user already exists
     var existingUser = dbContext.UserAccounts.FirstOrDefault(u => u.Username == username);

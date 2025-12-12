@@ -152,7 +152,7 @@ namespace Quizzard.Services
                     foreach (var group in picks.GroupBy(a => a.SelectedAnswer))
                         qStat.OptionPickCounts[group.Key] = group.Count();
                 }
-                // pairing could be handled similarly…
+                // pairing could be handled similarly
 
                 stats.Questions.Add(qStat);
             }
