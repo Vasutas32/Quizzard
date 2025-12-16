@@ -17,7 +17,7 @@ namespace Quizzard.Models.Questions
         {
             Type = QuestionType.Pairing;
         }
-        // In PairingQuestion.cs
+        
         public void SyncAnswerOptionsFromColumns()
         {
             // 1. Separate existing options into A and B lists based on their current index

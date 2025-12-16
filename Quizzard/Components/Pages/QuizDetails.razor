@@ -105,6 +105,7 @@ else
 	protected override async Task OnInitializedAsync()
 	{
 		quiz = await QuizService.GetQuizByIdAsync(quizId);
+		if (quiz == null) return;
 
 		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 		ClaimsPrincipalUser = authState.User;

@@ -29,7 +29,7 @@ namespace Quizzard.Services
             return await _context.Quizzes.ToListAsync();
         }
 
-        public async Task<Quiz> GetQuizByIdAsync(int quizId)
+        public async Task<Quiz?> GetQuizByIdAsync(int quizId)
         {
             return await _context.Quizzes
                 .Include(q => q.Questions)
@@ -83,7 +83,7 @@ namespace Quizzard.Services
         }
 
 
-        public async Task<QuizStatistic> GetQuizStatisticsAsync(int quizId)
+        public async Task<QuizStatistic?> GetQuizStatisticsAsync(int quizId)
         {
             // Load all completed results and their answers:
             var results = await _context.UserQuizResults
@@ -94,7 +94,7 @@ namespace Quizzard.Services
             var quiz = await _context.Quizzes
                 .Include(q => q.Questions)
                 .FirstOrDefaultAsync(q => q.Id == quizId);
-            if (quiz == null) throw new Exception("Quiz not found");
+            if (quiz == null) return null;
 
             double avgScore = 0;
             if (results.Count > 0)
